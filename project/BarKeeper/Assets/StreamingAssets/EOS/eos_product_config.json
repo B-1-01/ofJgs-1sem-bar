@@ -1,0 +1,38 @@
+{
+  "ProductName": "Barkeeper",
+  "ProductId": "a54ed9c778ce483daa56da2ed13af56c",
+  "ProductVersion": "0.1.0",
+  "imported": true,
+  "Clients": [
+    {
+      "Value": {
+        "ClientId": "xyza7891MCffPEzdFHX4clDB7eC3I47c",
+        "ClientSecret": "H3b35Az5DzZ8lWc87nO2crV3mQ9PHsWyGGNx1qk/p/8",
+        "EncryptionKey": "043DFAC1E278CCDB0E5EF87271F211B9250646A5239B04DB1F5C4D0E51CD76C1"
+      },
+      "Name": "Client"
+    }
+  ],
+  "Environments": {
+    "Deployments": [
+      {
+        "Value": {
+          "SandboxId": {
+            "Value": "382e484069774cea83a10bd858b659ac"
+          },
+          "DeploymentId": "fb662d9dedef49988511168504b8d7ba"
+        },
+        "Name": "Deployment"
+      }
+    ],
+    "Sandboxes": [
+      {
+        "Value": {
+          "Value": "382e484069774cea83a10bd858b659ac"
+        },
+        "Name": "Sandbox"
+      }
+    ]
+  },
+  "schemaVersion": "1.0"
+}
