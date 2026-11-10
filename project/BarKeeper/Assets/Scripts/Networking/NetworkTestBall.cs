@@ -39,6 +39,7 @@ public class NetworkTestBall : NetworkBehaviour
         rb.isKinematic = true;
     }
 
+    /// <summary>Inicializa o estado da bola, ativa a simulação física no servidor e regista a deteção de desconexões.</summary>
     public override void OnNetworkSpawn()
     {
         holderClientId.OnValueChanged += OnHolderChanged;
@@ -76,6 +77,7 @@ public class NetworkTestBall : NetworkBehaviour
         rb.MovePosition(holder.HoldPosition);
     }
 
+    /// <summary>Verifica se a bola está livre e dentro do alcance do jogador, permitindo ao servidor autorizar a interação.</summary>
     public bool ServerTryPickup(PlayerBallInteractor requester, float maxDistance)
     {
         if (!IsSpawned || !IsServer || IsHeld ||
@@ -102,6 +104,7 @@ public class NetworkTestBall : NetworkBehaviour
         return true;
     }
 
+    /// <summary>Liberta a bola e devolve-a à simulação física, aplicando uma velocidade inicial caso esteja a ser lançada.</summary>
     public void ServerDrop(Vector3 launchVelocity)
     {
         if (!IsSpawned || !IsServer || !IsHeld)

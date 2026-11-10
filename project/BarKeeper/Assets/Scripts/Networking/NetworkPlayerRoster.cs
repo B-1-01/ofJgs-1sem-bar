@@ -41,6 +41,7 @@ public class NetworkPlayerRoster : MonoBehaviour
         networkManager.OnServerStopped += OnServerStopped;
     }
 
+    /// <summary>Identifica as entradas e saídas de jogadores através dos eventos do NGO, distinguindo o Host dos Clients.</summary>
     private void OnConnectionEvent(NetworkManager manager, ConnectionEventData data)
     {
         if (manager != networkManager)

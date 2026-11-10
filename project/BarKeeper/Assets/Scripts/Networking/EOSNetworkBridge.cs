@@ -62,6 +62,7 @@ public class EOSNetworkBridge : MonoBehaviour
         eventsRegistered = true;
     }
 
+    /// <summary>Inicia uma sessão NGO como Host através do transporte EOS, desde que não exista outra sessão ativa.</summary>
     public bool StartHost()
     {
         if (!CanStart())
@@ -79,6 +80,7 @@ public class EOSNetworkBridge : MonoBehaviour
         return true;
     }
 
+    /// <summary>Obtém o Product User ID do proprietário do lobby e inicia uma ligação P2P ao Host através do NGO.</summary>
     public bool StartClient(string lobbyId)
     {
         if (!CanStart())
@@ -135,6 +137,7 @@ public class EOSNetworkBridge : MonoBehaviour
         return true;
     }
 
+    /// <summary>Limita o tempo disponível para estabelecer a ligação ao Host e comunica uma falha caso seja ultrapassado.</summary>
     private IEnumerator ConnectionTimeout()
     {
         yield return new WaitForSecondsRealtime(connectionTimeout);
@@ -145,6 +148,7 @@ public class EOSNetworkBridge : MonoBehaviour
             FailConnection("NGO connection timed out.");
     }
 
+    /// <summary>Processa os eventos de ligação do NGO, confirmando a conexão do Client e identificando entradas ou saídas de jogadores.</summary>
     private void OnConnectionEvent(NetworkManager manager, ConnectionEventData data)
     {
         if (manager != networkManager)
@@ -184,21 +188,25 @@ public class EOSNetworkBridge : MonoBehaviour
         }
     }
 
+    /// <summary>Comunica uma falha quando o transporte de rede deixa de funcionar corretamente.</summary>
     private void OnTransportFailure()
     {
         FailConnection("EOS network transport failure.");
     }
 
+    /// <summary>Processa o encerramento do Client NGO e atualiza o estado da ligação.</summary>
     private void OnClientStopped(bool wasHost)
     {
         HandleNetworkStopped();
     }
 
+    /// <summary>Processa o encerramento do servidor NGO e atualiza o estado da ligação.</summary>
     private void OnServerStopped(bool wasHost)
     {
         HandleNetworkStopped();
     }
 
+    /// <summary>Distingue um encerramento voluntário de uma interrupção inesperada da sessão.</summary>
     private void HandleNetworkStopped()
     {
         if (State == ConnectionState.Disconnecting)
@@ -212,6 +220,7 @@ public class EOSNetworkBridge : MonoBehaviour
         }
     }
 
+    /// <summary>Trata falhas de ligação, encerra a sessão NGO e notifica os restantes sistemas sem repetir o mesmo erro.</summary>
     private void FailConnection(string reason)
     {
         if (State != ConnectionState.Connecting &&
@@ -236,6 +245,7 @@ public class EOSNetworkBridge : MonoBehaviour
             SetState(ConnectionState.Disconnected, reason);
     }
 
+    /// <summary>Trata erros ao iniciar uma sessão, cancelando operações pendentes e repondo o estado da ligação.</summary>
     private bool StartFailed(string reason)
     {
         Debug.LogError($"[NGO] {reason}");
@@ -255,6 +265,7 @@ public class EOSNetworkBridge : MonoBehaviour
         return false;
     }
 
+    /// <summary>Encerra voluntariamente a sessão NGO e cancela qualquer timeout de ligação ativo.</summary>
     public void Shutdown()
     {
         StopConnectionTimeout();
@@ -271,6 +282,7 @@ public class EOSNetworkBridge : MonoBehaviour
             SetState(ConnectionState.Disconnected, "Disconnected.");
     }
 
+    /// <summary>Valida a autenticação EOS, o transporte configurado e o estado do NGO antes de iniciar uma sessão.</summary>
     private bool CanStart()
     {
         InitializeReferences();
@@ -299,6 +311,7 @@ public class EOSNetworkBridge : MonoBehaviour
         return true;
     }
 
+    /// <summary>Atualiza o estado da ligação e notifica os componentes interessados através de um evento.</summary>
     private void SetState(ConnectionState state, string message)
     {
         State = state;
@@ -306,6 +319,7 @@ public class EOSNetworkBridge : MonoBehaviour
         StateChanged?.Invoke(state, message);
     }
 
+    /// <summary>Cancela a espera pelo estabelecimento da ligação quando esta termina ou deixa de ser necessária.</summary>
     private void StopConnectionTimeout()
     {
         if (connectionTimeoutRoutine == null)

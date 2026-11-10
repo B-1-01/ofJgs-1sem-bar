@@ -8,6 +8,7 @@ public class EOSLoginManager : MonoBehaviour
     public ProductUserId LocalUserId { get; private set; }
     public bool IsLoggedIn => LocalUserId != null && LocalUserId.IsValid();
 
+    /// <summary>Inicia o processo de autenticação no EOS através de uma identidade associada ao dispositivo.</summary>
     private void Start()
     {
         if (EOSManager.Instance == null)
@@ -19,6 +20,7 @@ public class EOSLoginManager : MonoBehaviour
         CreateDeviceId();
     }
 
+    /// <summary>Solicita ao EOS a criação de um identificador de dispositivo para permitir autenticação sem uma conta Epic.</summary>
     private void CreateDeviceId()
     {
         var options = new CreateDeviceIdOptions
@@ -30,6 +32,7 @@ public class EOSLoginManager : MonoBehaviour
             ref options, null, OnDeviceIdCreated);
     }
 
+    /// <summary>Verifica o resultado da criação do Device ID e inicia o login caso tenha sido criado ou já exista.</summary>
     private void OnDeviceIdCreated(ref CreateDeviceIdCallbackInfo data)
     {
         if (data.ResultCode != Result.Success &&
@@ -42,6 +45,7 @@ public class EOSLoginManager : MonoBehaviour
         Login();
     }
 
+    /// <summary>Inicia a autenticação no EOS Connect utilizando as credenciais associadas ao dispositivo.</summary>
     private void Login()
     {
         EOSManager.Instance.StartConnectLoginWithOptions(
@@ -51,6 +55,7 @@ public class EOSLoginManager : MonoBehaviour
             OnLoginCompleted);
     }
 
+    /// <summary>Processa o resultado da autenticação, guardando o Product User ID ou criando um novo utilizador quando necessário.</summary>
     private void OnLoginCompleted(LoginCallbackInfo data)
     {
         if (data.ResultCode == Result.Success)

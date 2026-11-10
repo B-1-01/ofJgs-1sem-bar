@@ -45,6 +45,7 @@ public class PlayerBallInteractor : NetworkBehaviour
         }
     }
 
+    /// <summary>Permite ao servidor largar a bola transportada ou atribuir ao jogador a bola disponível mais próxima, após validar o pedido.</summary>
     [Rpc(SendTo.Server)]
     private void TogglePickupRpc(RpcParams rpcParams = default)
     {
@@ -86,6 +87,7 @@ public class PlayerBallInteractor : NetworkBehaviour
             closest.ServerTryPickup(this, pickupDistance);
     }
 
+    /// <summary>Valida o pedido de lançamento e aplica à bola transportada uma velocidade na direção indicada pelo jogador.</summary>
     [Rpc(SendTo.Server)]
     private void ThrowBallRpc(Vector3 direction, RpcParams rpcParams = default)
     {

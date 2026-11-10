@@ -26,6 +26,7 @@ public class EOSLobbyManager : MonoBehaviour
     public bool IsInLobby => !string.IsNullOrEmpty(lobbyId);
     public bool IsHost => isHost;
 
+    /// <summary>Obtém as referências necessárias e regista os eventos de ligação para acompanhar o estado da sessão.</summary>
     private void Start()
     {
         if (loginManager == null)
@@ -47,6 +48,7 @@ public class EOSLobbyManager : MonoBehaviour
         }
     }
 
+    /// <summary>Verifica se o utilizador está autenticado e se a interface de lobbies do EOS está disponível.</summary>
     private bool IsReady()
     {
         if (loginManager == null || !loginManager.IsLoggedIn)
@@ -77,6 +79,7 @@ public class EOSLobbyManager : MonoBehaviour
         return lobbyInterface != null;
     }
 
+    /// <summary>Cria um lobby EOS para até quatro jogadores e inicia uma sessão NGO como Host após a criação.</summary>
     public void CreateLobby()
     {
         if (!IsReady() || IsInLobby || isBusy || networkBridge == null ||
@@ -122,6 +125,7 @@ public class EOSLobbyManager : MonoBehaviour
             });
     }
 
+    /// <summary>Tenta entrar num lobby através do seu identificador e inicia a ligação NGO ao respetivo Host.</summary>
     public void JoinLobby(string targetLobbyId)
     {
         if (!IsReady() || IsInLobby || isBusy || networkBridge == null ||
@@ -168,6 +172,7 @@ public class EOSLobbyManager : MonoBehaviour
             });
     }
 
+    /// <summary>Atualiza o estado apresentado ao jogador quando a ligação NGO é iniciada, estabelecida ou encerrada.</summary>
     private void OnNetworkStateChanged(
         EOSNetworkBridge.ConnectionState state, string message)
     {
@@ -189,6 +194,7 @@ public class EOSLobbyManager : MonoBehaviour
         }
     }
 
+    /// <summary>Trata falhas de ligação, liberta o cursor e inicia a saída do lobby para permitir uma nova tentativa.</summary>
     private void OnNetworkFailed(string reason)
     {
         Debug.LogError($"[Barkeeper] Network failure: {reason}");
@@ -208,11 +214,13 @@ public class EOSLobbyManager : MonoBehaviour
         }
     }
 
+    /// <summary>Inicia a saída voluntária do lobby atual.</summary>
     public void LeaveLobby()
     {
         BeginLeavingLobby("Left lobby successfully.");
     }
 
+    /// <summary>Encerra a sessão NGO e solicita ao EOS a destruição do lobby ou a saída do jogador, consoante o seu papel.</summary>
     private void BeginLeavingLobby(string completedStatus)
     {
         if (!IsInLobby || isBusy)
@@ -259,6 +267,7 @@ public class EOSLobbyManager : MonoBehaviour
         }
     }
 
+    /// <summary>Verifica o resultado da operação de saída e limpa os dados locais quando esta termina com sucesso.</summary>
     private void HandleLeaveResult(Result result, string completedStatus)
     {
         isBusy = false;
@@ -273,6 +282,7 @@ public class EOSLobbyManager : MonoBehaviour
         ResetLocalLobby(completedStatus);
     }
 
+    /// <summary>Repõe os dados locais do lobby e atualiza a mensagem de estado apresentada ao jogador.</summary>
     private void ResetLocalLobby(string message)
     {
         isBusy = false;
@@ -283,6 +293,7 @@ public class EOSLobbyManager : MonoBehaviour
         Debug.Log($"[Barkeeper] {message}");
     }
 
+    /// <summary>Desenha a interface temporária de testes para criar, entrar e sair de lobbies, apresentando os estados EOS e NGO.</summary>
     private void OnGUI()
     {
         if (pauseMenu != null && !pauseMenu.IsOpen && !forceMenuVisible)

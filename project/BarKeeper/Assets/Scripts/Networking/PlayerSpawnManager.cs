@@ -24,6 +24,7 @@ public class PlayerSpawnManager : MonoBehaviour
         networkManager.OnServerStopped += OnServerStopped;
     }
 
+    /// <summary>Aprova a ligação caso exista um SpawnPoint livre, reservando-o e definindo a posição inicial do jogador.</summary>
     private void ApproveConnection(
         NetworkManager.ConnectionApprovalRequest request,
         NetworkManager.ConnectionApprovalResponse response)
@@ -59,6 +60,7 @@ public class PlayerSpawnManager : MonoBehaviour
         Debug.Log($"Player {request.ClientNetworkId} assigned to Spawn {availableIndex + 1}");
     }
 
+    /// <summary>Liberta o SpawnPoint associado a um jogador quando este abandona a sessão.</summary>
     private void OnClientDisconnected(ulong clientId)
     {
         if (!assignedSpawns.TryGetValue(clientId, out int index))

@@ -54,6 +54,7 @@ public class FPSPlayerController : NetworkBehaviour
         rb.constraints = RigidbodyConstraints.FreezeRotation;
     }
 
+    /// <summary>Configura o jogador após o spawn, permitindo apenas ao proprietário controlar a câmara e os movimentos.</summary>
     public override void OnNetworkSpawn()
     {
         if (playerCamera != null)
@@ -75,6 +76,7 @@ public class FPSPlayerController : NetworkBehaviour
             SetGameplayInputEnabled(true);
     }
 
+    /// <summary>Desassocia o jogador do menu de pausa, desativa a câmara e limpa os valores de movimento pendentes.</summary>
     public override void OnNetworkDespawn()
     {
         if (IsOwner)
@@ -116,6 +118,7 @@ public class FPSPlayerController : NetworkBehaviour
         HandleLook();
     }
 
+    /// <summary>Aplica movimento e rotação através do Rigidbody, utilizando aceleração para atingir a velocidade pretendida.</summary>
     private void FixedUpdate()
     {
         if (!IsSpawned || !IsOwner || rb.isKinematic)
@@ -138,6 +141,7 @@ public class FPSPlayerController : NetworkBehaviour
         rb.AddForce(requiredAcceleration, ForceMode.Acceleration);
     }
 
+    /// <summary>Lê o movimento através das teclas WASD e normaliza o vetor para evitar maior velocidade na diagonal.</summary>
     private void ReadMovementInput()
     {
         if (Keyboard.current == null)
@@ -157,6 +161,7 @@ public class FPSPlayerController : NetworkBehaviour
         moveInput = Vector2.ClampMagnitude(new Vector2(horizontal, vertical), 1f);
     }
 
+    /// <summary>Utiliza o movimento do rato para rodar horizontalmente a cápsula e controlar a inclinação vertical da câmara.</summary>
     private void HandleLook()
     {
         if (Mouse.current == null || playerCamera == null)
