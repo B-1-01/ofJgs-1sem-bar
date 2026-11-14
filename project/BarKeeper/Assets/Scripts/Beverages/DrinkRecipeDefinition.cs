@@ -36,7 +36,6 @@ public class RecipeIngredient
     public float Quantity => quantity;
 }
 
-
 /// <summary>
 /// Stores the configuration of a drink recipe.
 /// Recipes are created as ScriptableObjects and shared between
@@ -59,6 +58,9 @@ public class DrinkRecipeDefinition : ScriptableObject
     [SerializeField] private PreparationStation station;
     [SerializeField] private PreparationMethod method;
 
+    [Header("Glass")]
+    [SerializeField] private GlassType preferredGlass;
+
     public string RecipeId => recipeId;
     public string DisplayName => displayName;
 
@@ -66,4 +68,5 @@ public class DrinkRecipeDefinition : ScriptableObject
 
     public PreparationStation Station => station;
     public PreparationMethod Method => method;
+    public GlassType PreferredGlass => preferredGlass;
 }

@@ -19,3 +19,4 @@ MonoBehaviour:
     quantity: 1000
   station: 0
   method: 2
+  preferredGlass: 1
