@@ -20,6 +20,11 @@ public class FPSPlayerController : NetworkBehaviour
     [SerializeField] private float mouseSensitivity = 0.15f;
     [SerializeField] private float maxLookAngle = 85f;
 
+    [Header("Interaction")]
+    [Tooltip("DistÃ¢ncia mÃ¡xima configurÃ¡vel para permitir interaÃ§Ã£o.")]
+    [SerializeField] private float interactRange = 5f;
+    [SerializeField] private LayerMask interactableLayer = ~0;
+
     [Header("Debug")]
     [SerializeField] private bool showLocalBody = false;
 
@@ -31,6 +36,8 @@ public class FPSPlayerController : NetworkBehaviour
     private float cameraPitch;
     private float pendingYaw;
     private bool gameplayInputEnabled = true;
+
+    private Interactable currentInteractable;
 
     private void Awake()
     {
@@ -54,7 +61,7 @@ public class FPSPlayerController : NetworkBehaviour
         rb.constraints = RigidbodyConstraints.FreezeRotation;
     }
 
-    /// <summary>Configura o jogador após o spawn, permitindo apenas ao proprietário controlar a câmara e os movimentos.</summary>
+    /// <summary>Configura o jogador apï¿½s o spawn, permitindo apenas ao proprietï¿½rio controlar a cï¿½mara e os movimentos.</summary>
     public override void OnNetworkSpawn()
     {
         if (playerCamera != null)
@@ -76,7 +83,7 @@ public class FPSPlayerController : NetworkBehaviour
             SetGameplayInputEnabled(true);
     }
 
-    /// <summary>Desassocia o jogador do menu de pausa, desativa a câmara e limpa os valores de movimento pendentes.</summary>
+    /// <summary>Desassocia o jogador do menu de pausa, desativa a cï¿½mara e limpa os valores de movimento pendentes.</summary>
     public override void OnNetworkDespawn()
     {
         if (IsOwner)
@@ -111,14 +118,19 @@ public class FPSPlayerController : NetworkBehaviour
         {
             moveInput = Vector2.zero;
             pendingYaw = 0f;
+            ClearCurrentInteractable();
             return;
         }
 
         ReadMovementInput();
         HandleLook();
+
+        // Interaction: Inputs
+        HandleInteractionDetection();
+        HandleInteractionInput();
     }
 
-    /// <summary>Aplica movimento e rotação através do Rigidbody, utilizando aceleração para atingir a velocidade pretendida.</summary>
+    /// <summary>Aplica movimento e rotaï¿½ï¿½o atravï¿½s do Rigidbody, utilizando aceleraï¿½ï¿½o para atingir a velocidade pretendida.</summary>
     private void FixedUpdate()
     {
         if (!IsSpawned || !IsOwner || rb.isKinematic)
@@ -141,7 +153,7 @@ public class FPSPlayerController : NetworkBehaviour
         rb.AddForce(requiredAcceleration, ForceMode.Acceleration);
     }
 
-    /// <summary>Lê o movimento através das teclas WASD e normaliza o vetor para evitar maior velocidade na diagonal.</summary>
+    /// <summary>Lï¿½ o movimento atravï¿½s das teclas WASD e normaliza o vetor para evitar maior velocidade na diagonal.</summary>
     private void ReadMovementInput()
     {
         if (Keyboard.current == null)
@@ -161,7 +173,7 @@ public class FPSPlayerController : NetworkBehaviour
         moveInput = Vector2.ClampMagnitude(new Vector2(horizontal, vertical), 1f);
     }
 
-    /// <summary>Utiliza o movimento do rato para rodar horizontalmente a cápsula e controlar a inclinação vertical da câmara.</summary>
+    /// <summary>Utiliza o movimento do rato para rodar horizontalmente a cï¿½psula e controlar a inclinaï¿½ï¿½o vertical da cï¿½mara.</summary>
     private void HandleLook()
     {
         if (Mouse.current == null || playerCamera == null)
@@ -230,5 +242,58 @@ public class FPSPlayerController : NetworkBehaviour
     {
         if (IsOwner)
             SetCursorLocked(false);
+    }
+
+    // Interaction
+    private void HandleInteractionDetection()
+    {
+        if(playerCamera == null) return;
+
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayer, QueryTriggerInteraction.Ignore))
+        {
+            Interactable interactable = hit.collider.GetComponentInParent<Interactable>();
+
+            if (interactable != null)
+            {
+                if (currentInteractable != interactable)
+                {
+                    ClearCurrentInteractable();
+                    currentInteractable = interactable;
+                    currentInteractable.OnFocusEnter();
+                }
+                return;
+            }
+        }
+        ClearCurrentInteractable();
+    }
+
+    private void HandleInteractionInput()
+    {
+        if (Keyboard.current == null || currentInteractable == null) return;
+
+        if (Keyboard.current.eKey.wasPressedThisFrame)
+        {
+            currentInteractable.Interact(this);
+        }
+    }
+
+    private void ClearCurrentInteractable()
+    {
+        if (currentInteractable != null)
+        {
+            currentInteractable.OnFocusExit();
+            currentInteractable = null;
+        }
+    }
+
+    // Interact: Scene View
+    private void OnDrawGizmosSelected()
+    {
+        if (playerCamera != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawRay(playerCamera.transform.position, playerCamera.transform.forward * interactRange);
+        }
     }
 }
