@@ -11,7 +11,6 @@ public class FPSPlayerController : NetworkBehaviour
     [Header("References")]
     [SerializeField] private Camera playerCamera;
     [SerializeField] private Renderer bodyRenderer;
-    [SerializeField] private Transform handHoldPoint;
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 4f;
@@ -20,10 +19,6 @@ public class FPSPlayerController : NetworkBehaviour
     [Header("Camera")]
     [SerializeField] private float mouseSensitivity = 0.15f;
     [SerializeField] private float maxLookAngle = 85f;
-
-    [Header("Interaction")]
-    [SerializeField] private float interactDistance = 5f;
-    [SerializeField] private LayerMask interactableLayer = ~0;
 
     [Header("Debug")]
     [SerializeField] private bool showLocalBody = false;
@@ -36,14 +31,6 @@ public class FPSPlayerController : NetworkBehaviour
     private float cameraPitch;
     private float pendingYaw;
     private bool gameplayInputEnabled = true;
-
-    private InteractableObject currInteractable;
-    private InteractableObject heldItem;
-    private InteractableObject activeStation;
-
-    public InteractableObject CurrentInteractable => currInteractable;
-    public Transform HandHoldPoint => handHoldPoint != null ? handHoldPoint : playerCamera.transform;
-    public bool HasItemInHand => heldItem != null;
 
     private void Awake()
     {
@@ -67,7 +54,7 @@ public class FPSPlayerController : NetworkBehaviour
         rb.constraints = RigidbodyConstraints.FreezeRotation;
     }
 
-    /// <summary>Configura o jogador ap√≥s o spawn, permitindo apenas ao propriet√°rio controlar a c√¢mara e os movimentos.</summary>
+    /// <summary>Configura o jogador apÛs o spawn, permitindo apenas ao propriet·rio controlar a c‚mara e os movimentos.</summary>
     public override void OnNetworkSpawn()
     {
         if (playerCamera != null)
@@ -89,7 +76,7 @@ public class FPSPlayerController : NetworkBehaviour
             SetGameplayInputEnabled(true);
     }
 
-    /// <summary>Desassocia o jogador do menu de pausa, desativa a c√¢mara e limpa os valores de movimento pendentes.</summary>
+    /// <summary>Desassocia o jogador do menu de pausa, desativa a c‚mara e limpa os valores de movimento pendentes.</summary>
     public override void OnNetworkDespawn()
     {
         if (IsOwner)
@@ -108,7 +95,6 @@ public class FPSPlayerController : NetworkBehaviour
 
         moveInput = Vector2.zero;
         pendingYaw = 0f;
-        ClearInteractable();
     }
 
     private void Update()
@@ -118,17 +104,6 @@ public class FPSPlayerController : NetworkBehaviour
 
         HandleDebugInput();
 
-        // Se estiver numa statoion, bloqueia o movimento normal e permite sair com Q
-        // TODO: Verificar tecla!
-        if (activeStation != null)
-        {
-            if (Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame)
-            {
-                activeStation.ExitStationLocal(this);
-            }
-            return;
-        }
-
         if (!gameplayInputEnabled)
             return;
 
@@ -136,18 +111,14 @@ public class FPSPlayerController : NetworkBehaviour
         {
             moveInput = Vector2.zero;
             pendingYaw = 0f;
-            ClearInteractable();
             return;
         }
 
         ReadMovementInput();
         HandleLook();
-
-        HandleInteractionDetection();
-        HandleInteractionInput();
     }
 
-    /// <summary>Aplica movimento e rota√ß√£o atrav√©s do Rigidbody, utilizando acelera√ß√£o para atingir a velocidade pretendida.</summary>
+    /// <summary>Aplica movimento e rotaÁ„o atravÈs do Rigidbody, utilizando aceleraÁ„o para atingir a velocidade pretendida.</summary>
     private void FixedUpdate()
     {
         if (!IsSpawned || !IsOwner || rb.isKinematic)
@@ -170,7 +141,7 @@ public class FPSPlayerController : NetworkBehaviour
         rb.AddForce(requiredAcceleration, ForceMode.Acceleration);
     }
 
-    /// <summary>L√™ o movimento atrav√©s das teclas WASD e normaliza o vetor para evitar maior velocidade na diagonal.</summary>
+    /// <summary>LÍ o movimento atravÈs das teclas WASD e normaliza o vetor para evitar maior velocidade na diagonal.</summary>
     private void ReadMovementInput()
     {
         if (Keyboard.current == null)
@@ -190,7 +161,7 @@ public class FPSPlayerController : NetworkBehaviour
         moveInput = Vector2.ClampMagnitude(new Vector2(horizontal, vertical), 1f);
     }
 
-    /// <summary>Utiliza o movimento do rato para rodar horizontalmente a c√°psula e controlar a inclina√ß√£o vertical da c√¢mara.</summary>
+    /// <summary>Utiliza o movimento do rato para rodar horizontalmente a c·psula e controlar a inclinaÁ„o vertical da c‚mara.</summary>
     private void HandleLook()
     {
         if (Mouse.current == null || playerCamera == null)
@@ -243,7 +214,6 @@ public class FPSPlayerController : NetworkBehaviour
         {
             moveInput = Vector2.zero;
             pendingYaw = 0f;
-            ClearInteractable();
         }
 
         if (IsSpawned && IsOwner)
@@ -260,100 +230,5 @@ public class FPSPlayerController : NetworkBehaviour
     {
         if (IsOwner)
             SetCursorLocked(false);
-    }
-
-    // Interaction
-
-    private void HandleInteractionDetection()
-    {
-        if (playerCamera == null)
-        {
-            ClearInteractable();
-            return;
-        }
-
-        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-
-        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactableLayer, QueryTriggerInteraction.Ignore))
-        {
-            InteractableObject interactable = hit.collider.GetComponentInParent<InteractableObject>();
-
-            if (interactable != currInteractable)
-            {
-                if (currInteractable != null)
-                    currInteractable.SetFocus(false);
-
-                currInteractable = interactable;
-
-                if (currInteractable != null)
-                    currInteractable.SetFocus(true);
-            }
-        }
-        else
-        {
-            ClearInteractable();
-        }
-    }
-
-    private void HandleInteractionInput()
-    {
-        if (Keyboard.current == null)
-            return;
-
-        // TODO: Teclas
-        // Tecla E: Interagir
-        if (Keyboard.current.eKey.wasPressedThisFrame && currInteractable != null)
-        {
-            currInteractable.Interact(this);
-        }
-
-        // Tecla G: Droppar
-        if (Keyboard.current.gKey.wasPressedThisFrame && heldItem != null)
-        {
-            RequestDropHeldItemServerRpc();
-        }
-    }
-
-    private void ClearInteractable()
-    {
-        if (currInteractable != null)
-        {
-            currInteractable.SetFocus(false);
-            currInteractable = null;
-        }
-    }
-
-    // Helpers (Interaction)
-
-    public void ServerSetHeldItem(InteractableObject item)
-    {
-        heldItem = item;
-    }
-
-    public void SetHeldItemReference(InteractableObject item)
-    {
-        heldItem = item;
-    }
-
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    private void RequestDropHeldItemServerRpc()
-    {
-        if (heldItem != null)
-        {
-            heldItem.ServerDropItem();
-            heldItem = null;
-        }
-    }
-
-    public void EnterStationMinigame(InteractableObject station)
-    {
-        activeStation = station;
-        SetGameplayInputEnabled(false);
-    }
-
-    public void ExitStationMinigame()
-    {
-        activeStation = null;
-        SetGameplayInputEnabled(true);
     }
 }
