@@ -59,6 +59,13 @@ public class FPSPlayerController : NetworkBehaviour
         if (bodyRenderer == null)
             bodyRenderer = GetComponent<Renderer>();
 
+        if (heldPosition == null)
+        {
+            heldPosition = transform.Find("HeldPosition");
+            if (heldPosition == null && playerCamera != null)
+                heldPosition = playerCamera.transform.Find("HeldPosition");
+        }
+
         if (playerCamera != null)
         {
             audioListener = playerCamera.GetComponent<AudioListener>();

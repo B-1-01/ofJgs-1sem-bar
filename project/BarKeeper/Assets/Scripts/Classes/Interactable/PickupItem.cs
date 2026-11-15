@@ -1,7 +1,9 @@
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 
 [RequireComponent(typeof(NetworkObject))]
+[RequireComponent(typeof(NetworkTransform))]
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Collider))]
 public class PickupItem : Interactable
@@ -67,8 +69,12 @@ public class PickupItem : Interactable
 
         // Segue suavemente a posição e rotação de transporte do jogador
         Transform targetHold = currentHolder.HeldPosition;
-        rb.MovePosition(targetHold.position);
-        rb.MoveRotation(targetHold.rotation);
+        if (targetHold != null)
+        {
+            rb.position = targetHold.position;
+            rb.rotation = targetHold.rotation;
+            transform.SetPositionAndRotation(targetHold.position, targetHold.rotation);
+        }
     }
 
     /// <summary>Não permite focar/interagir se o objeto já estiver a ser segurado por alguém.</summary>
@@ -151,6 +157,43 @@ public class PickupItem : Interactable
     private void OnHolderChanged(ulong previous, ulong current)
     {
         UpdatePhysicalState();
+
+        if (previous != NoHolder)
+        {
+            FPSPlayerController prevPlayer = FindPlayerController(previous);
+            if (prevPlayer != null)
+                prevPlayer.ClearHeldItem();
+        }
+
+        if (current != NoHolder)
+        {
+            currentHolder = FindPlayerController(current);
+            if (currentHolder != null)
+                currentHolder.SetHeldItem(this);
+        }
+        else
+        {
+            currentHolder = null;
+        }
+    }
+
+    private FPSPlayerController FindPlayerController(ulong clientId)
+    {
+        if (NetworkManager.Singleton == null) return null;
+
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client) && client.PlayerObject != null)
+        {
+            return client.PlayerObject.GetComponent<FPSPlayerController>();
+        }
+
+        FPSPlayerController[] players = FindObjectsByType<FPSPlayerController>(FindObjectsSortMode.None);
+        foreach (var p in players)
+        {
+            if (p.IsSpawned && p.OwnerClientId == clientId)
+                return p;
+        }
+
+        return null;
     }
 
     private void UpdatePhysicalState()
