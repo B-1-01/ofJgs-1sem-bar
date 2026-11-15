@@ -121,6 +121,10 @@ public class PickupItem : Interactable
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
         rb.isKinematic = true;
+
+        NetworkObject.TrySetParent(player.HeldPosition, false);
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = Quaternion.identity;
     }
 
     public void RequestDrop(Vector3 dropVelocity)
@@ -148,6 +152,8 @@ public class PickupItem : Interactable
         }
 
         holderClientId.Value = NoHolder;
+
+        NetworkObject.TryRemoveParent(true);
 
         rb.isKinematic = false;
         rb.linearVelocity = velocity;
