@@ -289,6 +289,18 @@ public class FPSPlayerController : NetworkBehaviour
     {
         if (Keyboard.current == null) return;
 
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            CustomerNPC customer = currentInteractable.GetComponentInParent<CustomerNPC>();
+
+            if (customer != null)
+            {
+                customer.RequestDespawn();
+                ClearCurrentInteractable();
+                return;
+            }
+        }
+
         if (Keyboard.current.zKey.wasPressedThisFrame)
         {
             if (HasHeldItem)
