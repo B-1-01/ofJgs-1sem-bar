@@ -24,6 +24,8 @@ public class FPSPlayerController : NetworkBehaviour
     [Tooltip("Distância máxima configurável para permitir interação.")]
     [SerializeField] private float interactRange = 5f;
     [SerializeField] private LayerMask interactableLayer = ~0;
+    [Tooltip("Ponto no espaço (ex: filho da câmara) onde o item agarrado deve ficar.")]
+    [SerializeField] private Transform heldPosition;
 
     [Header("Debug")]
     [SerializeField] private bool showLocalBody = false;
@@ -38,6 +40,14 @@ public class FPSPlayerController : NetworkBehaviour
     private bool gameplayInputEnabled = true;
 
     private Interactable currentInteractable;
+    private PickupItem currentlyHeldItem;
+
+    public bool HasHeldItem => currentlyHeldItem != null;
+    public Transform HeldPosition => heldPosition != null ? heldPosition : transform;
+    public float InteractRange => interactRange;
+
+    public void SetHeldItem(PickupItem item) => currentlyHeldItem = item;
+    public void ClearHeldItem() => currentlyHeldItem = null;
 
     private void Awake()
     {
@@ -270,11 +280,20 @@ public class FPSPlayerController : NetworkBehaviour
 
     private void HandleInteractionInput()
     {
-        if (Keyboard.current == null || currentInteractable == null) return;
+        if (Keyboard.current == null) return;
 
-        if (Keyboard.current.eKey.wasPressedThisFrame)
+        if (Keyboard.current.zKey.wasPressedThisFrame)
         {
-            currentInteractable.Interact(this);
+            if (HasHeldItem)
+            {
+                currentlyHeldItem.RequestDrop(Vector3.zero);
+                return;
+            }
+
+            if (currentInteractable != null && currentInteractable.CanInteract(this))
+            {
+                currentInteractable.Interact(this);
+            }
         }
     }
 
