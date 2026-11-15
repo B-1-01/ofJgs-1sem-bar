@@ -532,20 +532,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 774016604}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &687368790
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 687368788}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d82bb7e5296ad942bba8b1424cfd618, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SimpleInteractable
-  objectName: Objeto
-  outline: {fileID: 0}
 --- !u!65 &687368791
 BoxCollider:
   m_ObjectHideFlags: 0

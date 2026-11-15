@@ -1,8 +1,9 @@
+using Unity.Netcode;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
 [RequireComponent(typeof(Outline))]
-public abstract class Interactable : MonoBehaviour
+public abstract class Interactable : NetworkBehaviour
 {
     [Header("Interaction Settings")]
     [SerializeField] private string objectName = "Objeto";
@@ -33,10 +34,10 @@ public abstract class Interactable : MonoBehaviour
             outline.enabled = false;
     }
 
-    /// <summary>
-    /// Ação principal executada pelo jogador.
-    /// Futuramente, Stations abrirão minigames e Pickups farão o pickup.
-    /// </summary>
+    /// <summary>Valida se o jogador pode interagir.</summary>
+    public virtual bool CanInteract(FPSPlayerController player) => true;
+
+    /// <summary>Ação principal executada pelo jogador.</summary>
     public abstract void Interact(FPSPlayerController player);
 
     /// <summary>Ativado quando a mira da câmara aponta para o objeto dentro do alcance.</summary>
