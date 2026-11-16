@@ -206,6 +206,12 @@ public class FPSPlayerController : NetworkBehaviour
         playerCamera.transform.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
     }
 
+    // Camera
+    public void SetPlayerCameraActive(bool active)
+    {
+        playerCamera.enabled = active;
+    }
+
     private void HandleDebugInput()
     {
         if (Keyboard.current == null)
