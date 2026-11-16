@@ -13,6 +13,9 @@ public class CustomerSpawner : MonoBehaviour
     [Header("Customer Prefab")]
     [SerializeField] private CustomerNPC customerPrefab;
 
+    [Header("Order System")]
+    [SerializeField] private DrinkOrderManager orderManager;
+
     [Header("Spawn Points")]
     [SerializeField] private List<Transform> spawnPoints = new();
 
@@ -45,6 +48,12 @@ public class CustomerSpawner : MonoBehaviour
 
     private void OnEnable()
     {
+        if (orderManager == null)
+            orderManager = FindFirstObjectByType<DrinkOrderManager>();
+
+        if (orderManager != null)
+            orderManager.EligibleRecipesChanged += OnRecipesChanged;
+
         RegisterNetworkManager();
     }
 
@@ -57,9 +66,12 @@ public class CustomerSpawner : MonoBehaviour
 
         if (networkManager == null)
         {
-            Debug.LogError(
-                "[CustomerSpawner] NetworkManager not found.",
-                this);
+            Debug.LogError("[CustomerSpawner] NetworkManager not found.", this);
+        }
+
+        if (orderManager == null)
+        {
+            Debug.LogError("[CustomerSpawner] DrinkOrderManager not found.", this);
         }
     }
 
@@ -69,6 +81,9 @@ public class CustomerSpawner : MonoBehaviour
     private void OnDisable()
     {
         CancelPendingSpawn();
+
+        if (orderManager != null)
+            orderManager.EligibleRecipesChanged -= OnRecipesChanged;
 
         if (networkManager == null)
             return;
@@ -143,6 +158,24 @@ public class CustomerSpawner : MonoBehaviour
     }
 
     /// <summary>
+    /// Starts or stops customer spawning when recipe availability changes.
+    /// </summary>
+    private void OnRecipesChanged()
+    {
+        if (!CanSpawn)
+            return;
+
+        if (orderManager != null && orderManager.HasEligibleRecipes())
+        {
+            ScheduleNextSpawn();
+        }
+        else
+        {
+            CancelPendingSpawn();
+        }
+    }
+
+    /// <summary>
     /// Schedules a new customer spawn if the server is active, no spawn is pending, and at least one point is available.
     /// </summary>
     private void ScheduleNextSpawn()
@@ -151,6 +184,9 @@ public class CustomerSpawner : MonoBehaviour
             return;
 
         if (pendingSpawn != null)
+            return;
+
+        if (orderManager == null || !orderManager.HasEligibleRecipes())
             return;
 
         if (!HasFreeSpawnPoint())
@@ -234,13 +270,17 @@ public class CustomerSpawner : MonoBehaviour
         if (!CanSpawn)
             return;
 
+        // Create the order before spawning the customer.
+        if (orderManager == null || !orderManager.TryCreateOrder(out DrinkOrder order))
+            return;
+
         Transform spawnPoint = spawnPoints[pointIndex];
 
         CustomerNPC customer = Instantiate(customerPrefab, spawnPoint.position, spawnPoint.rotation);
 
         int customerId = nextCustomerId++;
 
-        customer.Initialize(this, customerId, pointIndex);
+        customer.Initialize(this, orderManager, customerId, pointIndex, order);
 
         occupiedPoints[pointIndex] = customer;
 

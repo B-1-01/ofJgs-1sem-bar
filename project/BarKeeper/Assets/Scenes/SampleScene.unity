@@ -334,7 +334,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 454333541}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!20 &454333545
 Camera:
   m_ObjectHideFlags: 0
@@ -386,6 +386,52 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!1 &635462616
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 635462617}
+  - component: {fileID: 635462618}
+  m_Layer: 0
+  m_Name: DrinkOrderManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &635462617
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 635462616}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 800523955}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &635462618
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 635462616}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03c7fc72d07ac9949b1bbf2c7d7f9dee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DrinkOrderManager
+  recipeManager: {fileID: 93273735}
+  defaultPreferenceProfile: {fileID: 11400000, guid: dc6e4e59f8acb1f499c27c64cb471446, type: 2}
 --- !u!1 &642337933
 GameObject:
   m_ObjectHideFlags: 0
@@ -985,6 +1031,7 @@ Transform:
   m_Children:
   - {fileID: 93273736}
   - {fileID: 1057131452}
+  - {fileID: 635462617}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &814541031
@@ -1742,6 +1789,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomerSpawner
   customerPrefab: {fileID: -3678524964206394941, guid: 975a62dfc5154d04187bbc4b97dff566, type: 3}
+  orderManager: {fileID: 635462618}
   spawnPoints:
   - {fileID: 23757848}
   - {fileID: 715038125}
