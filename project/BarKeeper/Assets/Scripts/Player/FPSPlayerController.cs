@@ -43,6 +43,8 @@ public class FPSPlayerController : NetworkBehaviour
     private PickupItem currentlyHeldItem;
 
     public bool HasHeldItem => currentlyHeldItem != null;
+    public PickupItem CurrentItem => currentlyHeldItem;
+    public PickupItem CurrentlyHeldItem => currentlyHeldItem;
     public Transform HeldPosition => heldPosition != null ? heldPosition : transform;
     public float InteractRange => interactRange;
 

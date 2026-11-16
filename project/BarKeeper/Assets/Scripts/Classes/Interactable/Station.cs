@@ -20,7 +20,7 @@ public class Station : Interactable
         NetworkVariableWritePermission.Server
     );
 
-    private bool isUsingStationLocally = false;
+    protected bool isUsingStationLocally = false;
     private FPSPlayerController activeLocalPlayer;
 
     public bool IsInUse => currentUserId.Value != NoUser;
@@ -93,7 +93,7 @@ public class Station : Interactable
         currentUserId.Value = senderId;
     }
 
-    private void Update()
+    protected virtual void Update()
     {
         if (!isUsingStationLocally) return;
         if (Keyboard.current == null) return;
