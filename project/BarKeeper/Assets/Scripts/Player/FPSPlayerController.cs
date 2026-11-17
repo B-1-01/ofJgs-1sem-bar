@@ -297,15 +297,27 @@ public class FPSPlayerController : NetworkBehaviour
     {
         if (Keyboard.current == null) return;
 
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        // Customer order interactions.
+        if (Mouse.current != null && currentInteractable != null)
         {
-            CustomerNPC customer = currentInteractable.GetComponentInParent<CustomerNPC>();
+            CustomerNPC customer =
+                currentInteractable.GetComponentInParent<CustomerNPC>();
 
             if (customer != null)
             {
-                customer.RequestDespawn();
-                ClearCurrentInteractable();
-                return;
+                // Left click: advance the order.
+                if (Mouse.current.leftButton.wasPressedThisFrame)
+                {
+                    customer.RequestAdvanceOrder(this);
+                    return;
+                }
+
+                // Right click: cancel the order.
+                if (Mouse.current.rightButton.wasPressedThisFrame)
+                {
+                    customer.RequestCancelOrder(this);
+                    return;
+                }
             }
         }
 
