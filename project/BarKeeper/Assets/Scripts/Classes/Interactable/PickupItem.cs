@@ -120,7 +120,7 @@ public class PickupItem : Interactable
     public void RequestPlace(Vector3 position, Quaternion rotation)
     {
         if (!IsSpawned) return;
-        ServerPlaceAtRpc(position, rotation);
+        RequestPlaceRpc(position, rotation);
     }
 
     [Rpc(SendTo.Server)]

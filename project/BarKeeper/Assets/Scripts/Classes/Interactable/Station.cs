@@ -23,6 +23,9 @@ public class Station : Interactable
     protected bool isUsingStationLocally = false;
     private FPSPlayerController activeLocalPlayer;
 
+    private float lastExitTime = -1f;
+    private const float ExitInteractCooldown = 0.35f;
+
     public bool IsInUse => currentUserId.Value != NoUser;
     public bool IsUsedBy(ulong clientId) => currentUserId.Value == clientId;
 
@@ -54,6 +57,7 @@ public class Station : Interactable
 
     public override bool CanInteract(FPSPlayerController player)
     {
+        if (Time.time < lastExitTime + ExitInteractCooldown) return false;
         return IsSpawned && !IsInUse && MeetsStationRequirements(player);
     }
 
@@ -150,6 +154,8 @@ public class Station : Interactable
 
     private void RestoreLocalPlayerControls()
     {
+        lastExitTime = Time.time;
+
         OnMinigameExited();
 
         isUsingStationLocally = false;

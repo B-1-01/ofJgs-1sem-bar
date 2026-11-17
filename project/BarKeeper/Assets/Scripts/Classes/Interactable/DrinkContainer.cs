@@ -3,10 +3,6 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-/// <summary>
-/// Represents an ingredient and its volume inside the container.
-/// Network-serialized for multiplayer synchronization.
-/// </summary>
 [Serializable]
 public struct PouredIngredient : INetworkSerializable, IEquatable<PouredIngredient>
 {
@@ -25,7 +21,10 @@ public struct PouredIngredient : INetworkSerializable, IEquatable<PouredIngredie
         serializer.SerializeValue(ref AmountCl);
     }
 
-    public bool Equals(PouredIngredient other) => Ingredient == other.Ingredient;
+    public bool Equals(PouredIngredient other)
+    {
+        return Ingredient == other.Ingredient && Mathf.Approximately(AmountCl, other.AmountCl);
+    }
 }
 
 public abstract class DrinkContainer : PickupItem
@@ -35,20 +34,22 @@ public abstract class DrinkContainer : PickupItem
     [SerializeField] protected float maxCapacityCl = 33f;
     [SerializeField] protected GlassType glassType = GlassType.None;
 
-    [Tooltip("Exponential foam decay rate per second")]
-    [SerializeField] protected float foamDecayRate = 0.08f;
+    [Range(0f, 1f)]
+    [SerializeField] protected float foamToBeerRatio = 0.10f;
 
-    // List of all ingredients currently in the glass (synchronized via NGO)
+    [SerializeField] protected float foamThresholdCl = 10f;
+    [SerializeField] protected float decayRateAboveThreshold = 0.15f;
+    [SerializeField] protected float decayRateBelowThreshold = 0.03f;
+
+    // List of all ingredients
     private readonly NetworkList<PouredIngredient> ingredients = new();
 
-    // Foam volume in cl (synchronized via NGO)
     private readonly NetworkVariable<float> foamAmount = new(
         0f,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
     );
 
-    // --- Read-only properties ---
     public float LiquidAmount => CalculateTotalLiquid();
     public float FoamAmount => foamAmount.Value;
     public float TotalVolume => LiquidAmount + FoamAmount;
@@ -64,19 +65,27 @@ public abstract class DrinkContainer : PickupItem
 
     protected virtual void Update()
     {
-        // Exponential foam decay: dF/dt = -k * F (Server authoritative)
-        if (IsServer && foamAmount.Value > 0f)
+        ApplyFoamDecay();
+    }
+
+    private void ApplyFoamDecay()
+    {
+        float currentFoam = foamAmount.Value;
+        if (currentFoam <= 0f) return;
+        float activeDecayRate = currentFoam > foamThresholdCl 
+            ? decayRateAboveThreshold 
+            : decayRateBelowThreshold;
+
+        float decay = currentFoam * activeDecayRate * Time.deltaTime;
+        foamAmount.Value = currentFoam - decay < 0.01f ? 0f : currentFoam - decay;
+
+        if (foamToBeerRatio > 0f && decay > 0f)
         {
-            float currentFoam = foamAmount.Value;
-            float decay = currentFoam * foamDecayRate * Time.deltaTime;
-            float newFoam = currentFoam - decay;
-            foamAmount.Value = newFoam < 0.01f ? 0f : newFoam;
+            float liquidFromFoam = decay * foamToBeerRatio;
+            ServerAddIngredient(IngredientType.Beer, liquidFromFoam, 0f);
         }
     }
 
-    /// <summary>
-    /// Gets how much of a specific ingredient is inside this container (in cl).
-    /// </summary>
     public float GetIngredientAmount(IngredientType ingredient)
     {
         for (int i = 0; i < ingredients.Count; i++)
@@ -97,28 +106,25 @@ public abstract class DrinkContainer : PickupItem
         return total;
     }
 
-    // --- Server-Authoritative Pouring Methods ---
-
     public void ServerAddIngredient(IngredientType ingredient, float amountCl, float extraFoamCl = 0f)
     {
-        if (!IsServer || amountCl <= 0f) return;
+        if (!IsServer || (amountCl <= 0f && extraFoamCl <= 0f)) return;
 
-        bool found = false;
-        for (int i = 0; i < ingredients.Count; i++)
+        if (amountCl > 0f)
         {
-            if (ingredients[i].Ingredient == ingredient)
+            bool found = false;
+            for (int i = 0; i < ingredients.Count; i++)
             {
-                PouredIngredient existing = ingredients[i];
-                existing.AmountCl += amountCl;
-                ingredients[i] = existing;
-                found = true;
-                break;
+                if (ingredients[i].Ingredient == ingredient)
+                {
+                    PouredIngredient existing = ingredients[i];
+                    existing.AmountCl += amountCl;
+                    ingredients[i] = existing;
+                    found = true;
+                    break;
+                }
             }
-        }
-
-        if (!found)
-        {
-            ingredients.Add(new PouredIngredient(ingredient, amountCl));
+            if (!found) ingredients.Add(new PouredIngredient(ingredient, amountCl));
         }
 
         if (extraFoamCl > 0f)
