@@ -34,7 +34,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -5.54364, y: -0, z: 21.09384}
-  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 5678705724289985127}
@@ -132,7 +132,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 189117697
+  GlobalObjectIdHash: 2617458251
   InScenePlacedSourceGlobalObjectIdHash: 0
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
@@ -255,7 +255,10 @@ MonoBehaviour:
   outline: {fileID: 1388466899307511324}
   maxCapacityCl: 20
   glassType: 1
-  foamDecayRate: 0.08
+  foamToBeerRatio: 0.1
+  foamThresholdCl: 10
+  decayRateAboveThreshold: 0.15
+  decayRateBelowThreshold: 0.03
   beerSize: 20
   drinkRenderer: {fileID: 7894056937363297841}
   useDebugOverride: 0
