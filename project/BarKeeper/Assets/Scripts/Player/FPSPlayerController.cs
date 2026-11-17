@@ -309,11 +309,24 @@ public class FPSPlayerController : NetworkBehaviour
             }
         }
 
-        if (Keyboard.current.zKey.wasPressedThisFrame)
+        if (Keyboard.current.eKey.wasPressedThisFrame)
         {
             if (HasHeldItem)
             {
-                currentlyHeldItem.RequestDrop(Vector3.zero);
+                // Item stays up on raycast location
+                Vector3 dropPosition;
+                Quaternion dropRotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
+
+                Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+
+                if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayer, QueryTriggerInteraction.Ignore))
+                {
+                    dropPosition = hit.point + Vector3.up * 0.05f;
+                } else
+                {
+                    dropPosition = playerCamera.transform.position + playerCamera.transform.forward * (interactRange * 0.7f);
+                }
+                currentlyHeldItem.RequestPlace(dropPosition, dropRotation);
                 return;
             }
 

@@ -117,6 +117,12 @@ public class PickupItem : Interactable
         RequestDropRpc(dropVelocity);
     }
 
+    public void RequestPlace(Vector3 position, Quaternion rotation)
+    {
+        if (!IsSpawned) return;
+        ServerPlaceAtRpc(position, rotation);
+    }
+
     [Rpc(SendTo.Server)]
     private void RequestDropRpc(Vector3 dropVelocity, RpcParams rpcParams = default)
     {
@@ -125,6 +131,17 @@ public class PickupItem : Interactable
         if (!IsHeldBy(senderId)) return;
 
         ServerDrop(dropVelocity);
+    }
+
+    
+    [Rpc(SendTo.Server)]
+    private void RequestPlaceRpc(Vector3 position, Quaternion rotation, RpcParams rpcParams = default)
+    {
+        ulong senderId = rpcParams.Receive.SenderClientId;
+
+        if (!IsHeldBy(senderId)) return;
+
+        ServerPlaceAtRpc(position, rotation);
     }
 
     protected virtual void ServerDrop(Vector3 velocity)
@@ -136,6 +153,21 @@ public class PickupItem : Interactable
         {
             rb.isKinematic = false;
             rb.linearVelocity = velocity;
+            rb.angularVelocity = Vector3.zero;
+        }
+    }
+    
+    protected virtual void ServerPlaceAtRpc(Vector3 position, Quaternion rotation)
+    {
+        transform.SetPositionAndRotation(position, rotation);
+
+        holderClientId.Value = NoHolder;
+        DetachLocally();
+
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
     }
@@ -171,8 +203,8 @@ public class PickupItem : Interactable
     {
         currentHolder = player;
         player.SetHeldItem(this);
-
-        if (itemCollider != null) itemCollider.isTrigger = true;
+        
+        itemCollider.enabled = false;
 
         if (rb != null)
         {
@@ -200,6 +232,7 @@ public class PickupItem : Interactable
             currentHolder.ClearHeldItem();
             currentHolder = null;
         }
+        itemCollider.enabled = !IsHeld;
 
         if (netTransform != null) netTransform.enabled = true;
 
@@ -224,7 +257,7 @@ public class PickupItem : Interactable
     private void UpdatePhysicalState()
     {
         bool isHeld = IsHeld;
-        if (itemCollider != null) itemCollider.isTrigger = isHeld;
+        if (itemCollider != null) itemCollider.enabled = !isHeld;
         if (rb != null)
         {
             if (!rb.isKinematic && isHeld)
