@@ -255,7 +255,6 @@ MonoBehaviour:
   outline: {fileID: 1388466899307511324}
   maxCapacityCl: 20
   glassType: 1
-  foamDecayRate: 0.08
   beerSize: 20
   drinkRenderer: {fileID: 7894056937363297841}
   useDebugOverride: 0

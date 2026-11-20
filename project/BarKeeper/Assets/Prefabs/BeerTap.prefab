@@ -274,7 +274,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3138305494
+  GlobalObjectIdHash: 2785167201
   InScenePlacedSourceGlobalObjectIdHash: 0
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
@@ -371,7 +371,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5177270134011631557}
   - component: {fileID: 5824927734214260766}
-  - component: {fileID: 1523130957651323991}
   - component: {fileID: 6910384523706168438}
   m_Layer: 0
   m_Name: Camera
@@ -446,14 +445,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!81 &1523130957651323991
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2129117168094951796}
-  m_Enabled: 1
 --- !u!114 &6910384523706168438
 MonoBehaviour:
   m_ObjectHideFlags: 0

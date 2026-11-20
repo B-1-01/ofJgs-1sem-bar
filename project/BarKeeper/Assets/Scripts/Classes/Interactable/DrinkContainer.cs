@@ -34,13 +34,6 @@ public abstract class DrinkContainer : PickupItem
     [SerializeField] protected float maxCapacityCl = 33f;
     [SerializeField] protected GlassType glassType = GlassType.None;
 
-    [Range(0f, 1f)]
-    [SerializeField] protected float foamToBeerRatio = 0.10f;
-
-    [SerializeField] protected float foamThresholdCl = 10f;
-    [SerializeField] protected float decayRateAboveThreshold = 0.15f;
-    [SerializeField] protected float decayRateBelowThreshold = 0.03f;
-
     // List of all ingredients
     private readonly NetworkList<PouredIngredient> ingredients = new();
 
@@ -63,28 +56,7 @@ public abstract class DrinkContainer : PickupItem
 
     public NetworkList<PouredIngredient> Ingredients => ingredients;
 
-    protected virtual void Update()
-    {
-        ApplyFoamDecay();
-    }
-
-    private void ApplyFoamDecay()
-    {
-        float currentFoam = foamAmount.Value;
-        if (currentFoam <= 0f) return;
-        float activeDecayRate = currentFoam > foamThresholdCl 
-            ? decayRateAboveThreshold 
-            : decayRateBelowThreshold;
-
-        float decay = currentFoam * activeDecayRate * Time.deltaTime;
-        foamAmount.Value = currentFoam - decay < 0.01f ? 0f : currentFoam - decay;
-
-        if (foamToBeerRatio > 0f && decay > 0f)
-        {
-            float liquidFromFoam = decay * foamToBeerRatio;
-            ServerAddIngredient(IngredientType.Beer, liquidFromFoam, 0f);
-        }
-    }
+    protected virtual void Update() {}
 
     public float GetIngredientAmount(IngredientType ingredient)
     {
