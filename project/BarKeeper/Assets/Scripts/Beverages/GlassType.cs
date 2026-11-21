@@ -1,6 +1,6 @@
 public enum GlassType
 {
     None,
-    Pint
+    Beer
     // Add glass types here.
 }

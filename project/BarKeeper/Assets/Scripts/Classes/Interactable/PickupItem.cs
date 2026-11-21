@@ -19,6 +19,7 @@ public class PickupItem : Interactable
 
     private Rigidbody rb;
     private Collider itemCollider;
+    private NetworkTransform netTransform;
     private FPSPlayerController currentHolder;
 
     public bool IsHeld => holderClientId.Value != NoHolder;
@@ -29,6 +30,7 @@ public class PickupItem : Interactable
         base.Awake();
         rb = GetComponent<Rigidbody>();
         itemCollider = GetComponent<Collider>();
+        netTransform = GetComponent<NetworkTransform>();
     }
 
     public override void OnNetworkSpawn()
@@ -54,27 +56,19 @@ public class PickupItem : Interactable
         }
     }
 
+    private void LateUpdate()
+    {
+        if (IsHeld && currentHolder != null)
+        {
+            Transform targetHold = currentHolder.HeldPosition;
+            if (targetHold != null) transform.SetPositionAndRotation(targetHold.position, targetHold.rotation);
+        }
+    }
+
     private void FixedUpdate()
     {
-        // Apenas o servidor move fisicamente o objeto para o ponto do jogador
-        if (!IsServer || !IsHeld || currentHolder == null)
-            return;
-
-        // Se o jogador perdeu a ligação ou despawnou, larga o objeto
-        if (!currentHolder.IsSpawned || currentHolder.OwnerClientId != holderClientId.Value)
-        {
-            ServerDrop(Vector3.zero);
-            return;
-        }
-
-        // Segue suavemente a posição e rotação de transporte do jogador
-        Transform targetHold = currentHolder.HeldPosition;
-        if (targetHold != null)
-        {
-            rb.position = targetHold.position;
-            rb.rotation = targetHold.rotation;
-            transform.SetPositionAndRotation(targetHold.position, targetHold.rotation);
-        }
+        if (!IsServer || !IsHeld || currentHolder == null) return;
+        if (!currentHolder.IsSpawned || currentHolder.OwnerClientId != holderClientId.Value) ServerDrop(Vector3.zero);
     }
 
     /// <summary>Não permite focar/interagir se o objeto já estiver a ser segurado por alguém.</summary>
@@ -85,9 +79,8 @@ public class PickupItem : Interactable
 
     public override void Interact(FPSPlayerController player)
     {
-        if (!IsSpawned || IsHeld || player.HasHeldItem)
-            return;
-
+        if (!IsSpawned || IsHeld || player.HasHeldItem) return;
+        AttachLocallyTo(player);
         RequestPickupRpc(player.NetworkObjectId);
     }
 
@@ -106,7 +99,7 @@ public class PickupItem : Interactable
         if (player == null || player.OwnerClientId != senderId)
             return;
 
-        if (player.HasHeldItem)
+        if (player.HasHeldItem && player.CurrentlyHeldItem != this)
             return;
 
         float maxRange = player.InteractRange;
@@ -114,23 +107,20 @@ public class PickupItem : Interactable
         if (sqrDist > maxRange * maxRange + 2f)
             return;
 
-        currentHolder = player;
         holderClientId.Value = senderId;
-        player.SetHeldItem(this);
-
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-        rb.isKinematic = true;
-
-        NetworkObject.TrySetParent(player.HeldPosition, false);
-        transform.localPosition = Vector3.zero;
-        transform.localRotation = Quaternion.identity;
+        AttachLocallyTo(player);
     }
 
     public void RequestDrop(Vector3 dropVelocity)
     {
         if (!IsSpawned) return;
         RequestDropRpc(dropVelocity);
+    }
+
+    public void RequestPlace(Vector3 position, Quaternion rotation)
+    {
+        if (!IsSpawned) return;
+        RequestPlaceRpc(position, rotation);
     }
 
     [Rpc(SendTo.Server)]
@@ -143,27 +133,47 @@ public class PickupItem : Interactable
         ServerDrop(dropVelocity);
     }
 
-    private void ServerDrop(Vector3 velocity)
+    
+    [Rpc(SendTo.Server)]
+    private void RequestPlaceRpc(Vector3 position, Quaternion rotation, RpcParams rpcParams = default)
     {
-        if (currentHolder != null)
+        ulong senderId = rpcParams.Receive.SenderClientId;
+
+        if (!IsHeldBy(senderId)) return;
+
+        ServerPlaceAtRpc(position, rotation);
+    }
+
+    protected virtual void ServerDrop(Vector3 velocity)
+    {
+        holderClientId.Value = NoHolder;
+        DetachLocally();
+
+        if (rb != null)
         {
-            currentHolder.ClearHeldItem();
-            currentHolder = null;
+            rb.isKinematic = false;
+            rb.linearVelocity = velocity;
+            rb.angularVelocity = Vector3.zero;
         }
+    }
+    
+    protected virtual void ServerPlaceAtRpc(Vector3 position, Quaternion rotation)
+    {
+        transform.SetPositionAndRotation(position, rotation);
 
         holderClientId.Value = NoHolder;
+        DetachLocally();
 
-        NetworkObject.TryRemoveParent(true);
-
-        rb.isKinematic = false;
-        rb.linearVelocity = velocity;
-        rb.angularVelocity = Vector3.zero;
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
     }
 
     private void OnHolderChanged(ulong previous, ulong current)
     {
-        UpdatePhysicalState();
-
         if (previous != NoHolder)
         {
             FPSPlayerController prevPlayer = FindPlayerController(previous);
@@ -175,22 +185,65 @@ public class PickupItem : Interactable
         {
             currentHolder = FindPlayerController(current);
             if (currentHolder != null)
-                currentHolder.SetHeldItem(this);
+            {
+                AttachLocallyTo(currentHolder);
+            }
         }
         else
         {
+            DetachLocally();
+        }
+    }
+
+    /// <summary>
+    /// Configura o objeto para seguir o jogador localmente sem lag.
+    /// Desativa o NetworkTransform para que a posição não seja sobrescrita por pacotes de rede.
+    /// </summary>
+    private void AttachLocallyTo(FPSPlayerController player)
+    {
+        currentHolder = player;
+        player.SetHeldItem(this);
+        
+        itemCollider.enabled = false;
+
+        if (rb != null)
+        {
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            rb.isKinematic = true;
+        }
+
+        if (netTransform != null) netTransform.enabled = false;
+
+        Transform targetHold = player.HeldPosition;
+        if (targetHold != null) transform.SetPositionAndRotation(targetHold.position, targetHold.rotation);
+    }
+
+    /// <summary>
+    /// Desassocia o objeto do jogador e reativa o NetworkTransform e a física.
+    /// </summary>
+    private void DetachLocally()
+    {
+        if (currentHolder != null)
+        {
+            currentHolder.ClearHeldItem();
             currentHolder = null;
         }
+        itemCollider.enabled = !IsHeld;
+
+        if (netTransform != null) netTransform.enabled = true;
+
+        UpdatePhysicalState();
     }
 
     private FPSPlayerController FindPlayerController(ulong clientId)
     {
         if (NetworkManager.Singleton == null) return null;
 
-        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client) && client.PlayerObject != null)
-        {
-            return client.PlayerObject.GetComponent<FPSPlayerController>();
-        }
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client) && client.PlayerObject != null) return client.PlayerObject.GetComponent<FPSPlayerController>();
 
         FPSPlayerController[] players = FindObjectsByType<FPSPlayerController>(FindObjectsSortMode.None);
         foreach (var p in players)
@@ -198,19 +251,61 @@ public class PickupItem : Interactable
             if (p.IsSpawned && p.OwnerClientId == clientId)
                 return p;
         }
-
         return null;
     }
 
     private void UpdatePhysicalState()
     {
-        if (itemCollider != null) itemCollider.isTrigger = IsHeld;
-        if (!IsServer) rb.isKinematic = IsHeld;
+        bool isHeld = IsHeld;
+        if (itemCollider != null) itemCollider.enabled = !isHeld;
+        if (rb != null)
+        {
+            if (!rb.isKinematic && isHeld)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            rb.isKinematic = isHeld;
+        }
+
+        if (netTransform != null)
+        {
+            netTransform.enabled = !isHeld;
+        }
     }
 
     private void OnClientDisconnected(ulong clientId)
     {
         if (IsHeldBy(clientId))
             ServerDrop(Vector3.zero);
+    }
+
+    /// <summary>
+    /// Coloca o objeto numa posição específica pelo servidor (ex: na bancada ou estação),
+    /// libertando-o do jogador e mantendo o estado de rede sincronizado.
+    /// </summary>
+    public virtual void ServerPlaceAt(Transform targetTransform, bool makeKinematic = true)
+    {
+        if (!IsServer) return;
+
+        holderClientId.Value = NoHolder;
+        DetachLocally();
+
+        if (targetTransform != null)
+        {
+            transform.SetPositionAndRotation(targetTransform.position, targetTransform.rotation);
+        }
+
+        if (rb != null)
+        {
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            rb.isKinematic = makeKinematic;
+        }
+
+        UpdatePhysicalState();
     }
 }
