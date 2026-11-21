@@ -25,6 +25,10 @@ public class DrinkRecipeManager : MonoBehaviour
     [SerializeField]
     private List<PreparationStation> unlockedStations = new();
 
+    [Header("Ingredient Display Units")]
+    [SerializeField]
+    private List<IngredientUnitEntry> ingredientUnits = new();
+
     public IReadOnlyList<DrinkRecipeDefinition> AllRecipes => allRecipes;
     public IReadOnlyList<DrinkRecipeDefinition> AvailableRecipes => availableRecipes;
     public IReadOnlyList<IngredientType> UnlockedIngredients => unlockedIngredients;
@@ -110,5 +114,55 @@ public class DrinkRecipeManager : MonoBehaviour
     public bool IsRecipeAvailable(DrinkRecipeDefinition recipe)
     {
         return recipe != null && availableRecipes.Contains(recipe);
+    }
+
+    /// <summary>
+    /// Retrieves the display unit associated with an ingredient.
+    /// </summary>
+    public bool TryGetUnit(IngredientType ingredient, out IngredientUnit unit)
+    {
+        foreach (IngredientUnitEntry entry in ingredientUnits)
+        {
+            if (entry != null && entry.Ingredient == ingredient)
+            {
+                unit = entry.Unit;
+                return true;
+            }
+        }
+
+        unit = default;
+        return false;
+    }
+
+    private void OnValidate()
+    {
+        HashSet<IngredientType> validIngredients = new();
+
+        foreach (IngredientType ingredient in Enum.GetValues(typeof(IngredientType)))
+        {
+            if (ingredient != IngredientType.None)
+                validIngredients.Add(ingredient);
+        }
+
+        HashSet<IngredientType> configuredIngredients = new();
+
+        // Remove invalid or duplicate entries, preserving existing units.
+        ingredientUnits.RemoveAll(entry => entry == null || !validIngredients.Contains(entry.Ingredient) || !configuredIngredients.Add(entry.Ingredient));
+
+        // Add any ingredients missing from the configuration.
+        foreach (IngredientType ingredient in validIngredients)
+        {
+            if (configuredIngredients.Add(ingredient))
+            {
+                ingredientUnits.Add(
+                    new IngredientUnitEntry(
+                        ingredient,
+                        IngredientUnit.Milliliters));
+            }
+        }
+
+        // Keep the list ordered according to the enum.
+        ingredientUnits.Sort((a, b) =>
+            a.Ingredient.CompareTo(b.Ingredient));
     }
 }

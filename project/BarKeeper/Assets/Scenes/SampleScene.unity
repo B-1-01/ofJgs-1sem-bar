@@ -234,6 +234,25 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 211bb6f1d955701479f55c4f249955e1, type: 2}
   unlockedIngredients: 0200000003000000040000000500000006000000
   unlockedStations: 0000000001000000
+  ingredientUnits:
+  - ingredient: 1
+    unit: 0
+  - ingredient: 2
+    unit: 0
+  - ingredient: 3
+    unit: 0
+  - ingredient: 4
+    unit: 0
+  - ingredient: 5
+    unit: 1
+  - ingredient: 6
+    unit: 1
+  - ingredient: 7
+    unit: 0
+  - ingredient: 8
+    unit: 0
+  - ingredient: 9
+    unit: 0
 --- !u!4 &93273736
 Transform:
   m_ObjectHideFlags: 0
