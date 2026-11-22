@@ -282,6 +282,7 @@ public class DrinkOrderManager : MonoBehaviour
         if (oldStatus == OrderStatus.InPreparation)
         {
             if (newStatus == OrderStatus.Completed ||
+                newStatus == OrderStatus.Rejected ||
                 newStatus == OrderStatus.Cancelled)
             {
                 return true;

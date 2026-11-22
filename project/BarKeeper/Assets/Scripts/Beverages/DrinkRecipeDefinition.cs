@@ -61,6 +61,10 @@ public class DrinkRecipeDefinition : ScriptableObject
     [Header("Glass")]
     [SerializeField] private GlassType preferredGlass;
 
+    [Header("Delivery Validation")]
+    [Range(0f, 100f)]
+    [SerializeField] private float ingredientTolerancePercent = 10f;
+
     public string RecipeId => recipeId;
     public string DisplayName => displayName;
 
@@ -69,4 +73,5 @@ public class DrinkRecipeDefinition : ScriptableObject
     public PreparationStation Station => station;
     public PreparationMethod Method => method;
     public GlassType PreferredGlass => preferredGlass;
+    public float IngredientTolerancePercent => ingredientTolerancePercent;
 }
