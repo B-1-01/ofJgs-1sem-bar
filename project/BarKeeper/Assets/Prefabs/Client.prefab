@@ -237,6 +237,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d82bb7e5296ad942bba8b1424cfd618, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimpleInteractable
+  ShowTopMostFoldoutHeaderGroup: 1
   objectName: Cliente
   outline: {fileID: -6736373778395568080}
 --- !u!114 &-3678524964206394941
@@ -252,3 +253,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomerNPC
   ShowTopMostFoldoutHeaderGroup: 1
+  departureDelay: 3
+  pickupPatience: 20
+  deliveryPatience: 20
