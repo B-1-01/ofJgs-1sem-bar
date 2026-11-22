@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using Unity.Netcode.Components;
 
 [Serializable]
 public struct PouredIngredient : INetworkSerializable, IEquatable<PouredIngredient>
@@ -34,6 +35,12 @@ public abstract class DrinkContainer : PickupItem
     [SerializeField] protected float maxCapacityCl = 33f;
     [SerializeField] protected GlassType glassType = GlassType.None;
 
+    [Header("Empty Container Spawn")]
+    [SerializeField] private Transform emptySpawnPoint;
+
+    private Vector3 initialPosition;
+    private Quaternion initialRotation;
+
     // List of all ingredients
     private readonly NetworkList<PouredIngredient> ingredients = new();
 
@@ -57,6 +64,52 @@ public abstract class DrinkContainer : PickupItem
     public NetworkList<PouredIngredient> Ingredients => ingredients;
 
     protected virtual void Update() {}
+
+    /// <summary>
+    /// Stores the container's initial position on the server.
+    /// </summary>
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        if (!IsServer)
+            return;
+
+        initialPosition = transform.position;
+        initialRotation = transform.rotation;
+    }
+
+    /// <summary>
+    /// Empties the container and returns it to its original spawn point.
+    /// The server handles the reset and synchronizes it with all clients.
+    /// </summary>
+    public void ServerReturnToEmptySpawn()
+    {
+        if (!IsServer || !IsSpawned)
+            return;
+
+        // Release the container from its current holder.
+        ServerPlaceAt(null);
+
+        // Remove all ingredients and foam.
+        ServerEmpty();
+
+        // Use the configured spawn point or the original position.
+        Vector3 targetPosition = emptySpawnPoint != null
+            ? emptySpawnPoint.position
+            : initialPosition;
+
+        Quaternion targetRotation = emptySpawnPoint != null
+            ? emptySpawnPoint.rotation
+            : initialRotation;
+
+        // Teleport the container on all connected instances.
+        GetComponent<NetworkTransform>().Teleport(
+            targetPosition,
+            targetRotation,
+            transform.localScale
+        );
+    }
 
     public float GetIngredientAmount(IngredientType ingredient)
     {
@@ -82,6 +135,9 @@ public abstract class DrinkContainer : PickupItem
     {
         if (!IsServer || (amountCl <= 0f && extraFoamCl <= 0f)) return;
 
+        // Liquid can replace foam, but cannot exceed the container capacity.
+        amountCl = Mathf.Clamp(amountCl, 0f, maxCapacityCl - LiquidAmount);
+
         if (amountCl > 0f)
         {
             bool found = false;
@@ -99,16 +155,22 @@ public abstract class DrinkContainer : PickupItem
             if (!found) ingredients.Add(new PouredIngredient(ingredient, amountCl));
         }
 
-        if (extraFoamCl > 0f)
-        {
-            foamAmount.Value = Mathf.Max(0f, foamAmount.Value + extraFoamCl);
-        }
+        // Remove excess foam when liquid or new foam exceeds the capacity.
+        float maxFoamCl = Mathf.Max(0f, maxCapacityCl - LiquidAmount);
+
+        foamAmount.Value = Mathf.Clamp(
+            foamAmount.Value + extraFoamCl,
+            0f,
+            maxFoamCl
+        );
     }
 
     public void ServerSetFoam(float foamCl)
     {
         if (!IsServer) return;
-        foamAmount.Value = Mathf.Max(0f, foamCl);
+        // Foam cannot occupy more than the remaining container capacity.
+        float maxFoamCl = Mathf.Max(0f, maxCapacityCl - LiquidAmount);
+        foamAmount.Value = Mathf.Clamp(foamCl, 0f, maxFoamCl);
     }
 
     public void ServerEmpty()

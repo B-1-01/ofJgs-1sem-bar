@@ -16,7 +16,8 @@ public enum IngredientType
     Ice,
     Sugar,
     Gin,
-    Tequilla
+    Tequilla,
+    BeerFoam
 
     // Add new ingredients at the end to preserve existing enum values.
 }
@@ -27,7 +28,8 @@ public enum IngredientType
 public enum IngredientUnit
 {
     Milliliters,
-    Units
+    Units,
+    Centiliters
 }
 
 /// <summary>

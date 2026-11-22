@@ -73,6 +73,14 @@ public class CustomerNPC : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    // Number of incorrect drink deliveries received by this customer.
+    // Server-authoritative and synchronized for all players.
+    private readonly NetworkVariable<int> rejectedDeliveryCount = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     // Tracks which patience milestones have already been logged locally.
     private bool timerStartLogged;
     private bool timerHalfLogged;
@@ -87,6 +95,11 @@ public class CustomerNPC : NetworkBehaviour
     public int OrderId => orderId;
     public string RecipeId => recipeId;
     public OrderStatus CurrentOrderStatus => orderStatus.Value;
+
+    /// <summary>
+    /// Number of incorrect delivery attempts registered by the server.
+    /// </summary>
+    public int RejectedDeliveryCount => rejectedDeliveryCount.Value;
 
     /// <summary>
     /// Returns the remaining patience time using the synchronized server clock.
@@ -176,6 +189,8 @@ public class CustomerNPC : NetworkBehaviour
         }
 
         orderStatus.OnValueChanged += OnOrderStatusChanged;
+
+        rejectedDeliveryCount.OnValueChanged += OnRejectedDeliveryCountChanged;
 
         Debug.Log(
             $"[CustomerNPC] Spawned | " +
@@ -308,7 +323,7 @@ public class CustomerNPC : NetworkBehaviour
             // Collection completed. Start a fresh delivery timer.
             StartPatienceTimer(OrderStatus.InPreparation);
         }
-        else if (newStatus == OrderStatus.Completed || newStatus == OrderStatus.Cancelled)
+        else if (newStatus == OrderStatus.Completed || newStatus == OrderStatus.Rejected || newStatus == OrderStatus.Cancelled)
         {
             StopPatienceTimer();
 
@@ -333,6 +348,8 @@ public class CustomerNPC : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         orderStatus.OnValueChanged -= OnOrderStatusChanged;
+
+        rejectedDeliveryCount.OnValueChanged -= OnRejectedDeliveryCountChanged;
 
         if (departureCoroutine != null)
         {
@@ -399,11 +416,24 @@ public class CustomerNPC : NetworkBehaviour
             currentStatus != OrderStatus.InPreparation)
             return;
 
+        // Identify the actual networked object being carried.
+        // The server will verify ownership and read its contents itself.
+        ulong carriedItemObjectId = ulong.MaxValue;
+
+        if (!cancelOrder &&
+            currentStatus == OrderStatus.InPreparation &&
+            player.CurrentlyHeldItem != null &&
+            player.CurrentlyHeldItem.IsSpawned)
+        {
+            carriedItemObjectId = player.CurrentlyHeldItem.NetworkObjectId;
+        }
+
         RequestOrderActionRpc(
             player.NetworkObjectId,
             orderId,
             currentStatus,
-            cancelOrder);
+            cancelOrder,
+            carriedItemObjectId);
     }
 
     /// <summary>
@@ -411,11 +441,12 @@ public class CustomerNPC : NetworkBehaviour
     /// </summary>
     [Rpc(SendTo.Server)]
     private void RequestOrderActionRpc(
-        ulong playerObjectId,
-        int requestedOrderId,
-        OrderStatus expectedStatus,
-        bool cancelOrder,
-        RpcParams rpcParams = default)
+         ulong playerObjectId,
+         int requestedOrderId,
+         OrderStatus expectedStatus,
+         bool cancelOrder,
+         ulong carriedItemObjectId,
+         RpcParams rpcParams = default)
     {
         if (!IsServer || !IsSpawned || orderManager == null)
             return;
@@ -474,7 +505,13 @@ public class CustomerNPC : NetworkBehaviour
         }
         else if (expectedStatus == OrderStatus.InPreparation)
         {
-            newStatus = OrderStatus.Completed;
+            // Delivery must be verified instead of automatically completing the order.
+            TryDeliverDrink(
+                player,
+                rpcParams.Receive.SenderClientId,
+                carriedItemObjectId);
+
+            return;
         }
         else
         {
@@ -492,6 +529,126 @@ public class CustomerNPC : NetworkBehaviour
 
         // Apply the status change and manage the corresponding patience phase.
         FinishOrder(newStatus);
+    }
+
+    /// <summary>
+    /// Validates a drink delivery on the server.
+    /// Only the actual holder of the drink can attempt delivery.
+    /// </summary>
+    private void TryDeliverDrink(
+        FPSPlayerController player,
+        ulong senderClientId,
+        ulong carriedItemObjectId)
+    {
+        if (!IsServer ||
+            orderManager == null ||
+            orderStatus.Value != OrderStatus.InPreparation)
+            return;
+
+        // No carried item means there is no delivery to process.
+        if (carriedItemObjectId == ulong.MaxValue)
+            return;
+
+        // The submitted object must still exist on the server.
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(
+            carriedItemObjectId, out NetworkObject itemObject))
+            return;
+
+        if (!itemObject.TryGetComponent(out DrinkContainer drink))
+            return;
+
+        if (!drink.IsSpawned || !drink.IsHeldBy(senderClientId))
+            return;
+
+        if (player.OwnerClientId != senderClientId)
+            return;
+
+        // Retrieve the authoritative active order and recipe.
+        if (!orderManager.TryGetOrder(orderId, out DrinkOrder activeOrder))
+            return;
+
+        if (activeOrder.Status != OrderStatus.InPreparation ||
+            activeOrder.Recipe == null ||
+            activeOrder.Recipe.RecipeId != recipeId)
+            return;
+
+        // Compare the server's drink contents with the ordered recipe.
+        bool isValid = DrinkDeliveryValidator.MatchesRecipe(
+            drink,
+            activeOrder.Recipe,
+            activeOrder.Recipe.IngredientTolerancePercent,
+            out string failureReason);
+
+        if (!isValid)
+        {
+            HandleIncorrectDelivery(failureReason);
+            return;
+        }
+
+        // Commit the completion once. Duplicate requests cannot succeed.
+        if (!orderManager.TryChangeOrderStatus(
+            orderId,
+            OrderStatus.InPreparation,
+            OrderStatus.Completed))
+            return;
+
+        Debug.Log(
+            $"[Delivery] Customer {customerId} | " +
+            $"Order {orderId} | Accepted | " +
+            $"Drink {carriedItemObjectId}",
+            this);
+
+        // Stop patience and start the existing departure sequence.
+        FinishOrder(OrderStatus.Completed);
+
+        // Return the empty glass to its spawn point for reuse.
+        drink.ServerReturnToEmptySpawn();
+    }
+
+    /// <summary>
+    /// Handles an incorrect drink delivery.
+    /// The first rejection keeps the order active.
+    /// The second rejection ends the order with Rejected.
+    /// </summary>
+    private void HandleIncorrectDelivery(string failureReason)
+    {
+        if (!IsServer || orderManager == null ||
+            orderStatus.Value != OrderStatus.InPreparation)
+            return;
+
+        int nextRejectionCount = rejectedDeliveryCount.Value + 1;
+
+        if (nextRejectionCount >= 2)
+        {
+            // The second incorrect delivery permanently rejects the order.
+            if (!orderManager.TryChangeOrderStatus(
+                orderId,
+                OrderStatus.InPreparation,
+                OrderStatus.Rejected))
+                return;
+
+            rejectedDeliveryCount.Value = nextRejectionCount;
+
+            Debug.Log(
+                $"[Delivery] Customer {customerId} | " +
+                $"Order {orderId} | Final rejection | " +
+                $"Reason: {failureReason}",
+                this);
+
+            FinishOrder(OrderStatus.Rejected);
+        }
+        else
+        {
+            // The customer refuses the drink but continues waiting.
+            // The player keeps the object and the patience timer continues.
+            rejectedDeliveryCount.Value = nextRejectionCount;
+
+            Debug.Log(
+                $"[Delivery] Customer {customerId} | " +
+                $"Order {orderId} | Drink refused | " +
+                $"Reason: {failureReason}",
+                this);
+        }
     }
 
     /// <summary>
@@ -514,6 +671,18 @@ public class CustomerNPC : NetworkBehaviour
         PrintOrder();
 
         OrderStatusChanged?.Invoke(this, previousStatus, newStatus);
+    }
+
+    /// <summary>
+    /// Logs rejected delivery attempts on every connected instance.
+    /// </summary>
+    private void OnRejectedDeliveryCountChanged(int previousCount, int newCount)
+    {
+        Debug.Log(
+            $"[Delivery] Customer {customerId} | " +
+            $"Order {orderId} | " +
+            $"Incorrect deliveries: {newCount}/2",
+            this);
     }
 
     /// <summary>
