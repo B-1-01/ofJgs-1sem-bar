@@ -2,10 +2,24 @@ Shader "Barkeeper/DrinkLiquid"
 {
     Properties
     {
-        _LiquidColor ("Liquid Color", Color) = (0.95, 0.65, 0.12, 0.85) // Âmbar cerveja
-        _FoamColor ("Foam Color", Color) = (0.98, 0.98, 0.92, 1.0)     // Espuma
+        _LiquidColor ("Liquid Color (Mixed)", Color) = (0.95, 0.65, 0.12, 0.85)
+        _FoamColor ("Foam Color", Color) = (0.98, 0.98, 0.92, 1.0)
         _LiquidAmount ("Liquid Fill (0-1)", Range(0, 1)) = 0.0
         _FoamAmount ("Foam Fill (0-1)", Range(0, 1)) = 0.0
+        _MixFactor ("Mix Factor (0=Layered, 1=Mixed)", Range(0, 1)) = 0.0
+        _LayerCount ("Layer Count", Float) = 0.0
+
+        _LayerColor0 ("Layer 0 Color", Color) = (0.95, 0.65, 0.12, 0.85)
+        _LayerColor1 ("Layer 1 Color", Color) = (0.18, 0.07, 0.03, 0.94)
+        _LayerColor2 ("Layer 2 Color", Color) = (0.88, 0.94, 0.98, 0.45)
+        _LayerColor3 ("Layer 3 Color", Color) = (0.45, 0.88, 0.18, 0.80)
+        _LayerColor4 ("Layer 4 Color", Color) = (0.96, 0.84, 0.42, 0.75)
+        _LayerColor5 ("Layer 5 Color", Color) = (0.85, 0.96, 0.92, 0.48)
+        _LayerColor6 ("Layer 6 Color", Color) = (0.95, 0.92, 0.80, 0.65)
+        _LayerColor7 ("Layer 7 Color", Color) = (0.82, 0.95, 1.00, 0.55)
+
+        _LayerTops0 ("Layer Tops 0-3", Vector) = (0, 0, 0, 0)
+        _LayerTops1 ("Layer Tops 4-7", Vector) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -42,6 +56,18 @@ Shader "Barkeeper/DrinkLiquid"
                 half4 _FoamColor;
                 float _LiquidAmount;
                 float _FoamAmount;
+                float _MixFactor;
+                float _LayerCount;
+                half4 _LayerColor0;
+                half4 _LayerColor1;
+                half4 _LayerColor2;
+                half4 _LayerColor3;
+                half4 _LayerColor4;
+                half4 _LayerColor5;
+                half4 _LayerColor6;
+                half4 _LayerColor7;
+                float4 _LayerTops0;
+                float4 _LayerTops1;
             CBUFFER_END
 
             Varyings vert(Attributes input)
@@ -73,8 +99,31 @@ Shader "Barkeeper/DrinkLiquid"
                     return _FoamColor;
                 }
 
-                // 3. ZONA DA CERVEJA: do fundo ate _LiquidAmount
-                return _LiquidColor;
+                // 3. ZONA DO LÍQUIDO: camadas por ingrediente ou cor misturada
+                if (_LayerCount <= 1.5 || _MixFactor >= 0.999)
+                {
+                    return _LiquidColor;
+                }
+
+                const float edgeSoftness = 0.008;
+                half4 layeredColor = _LayerColor0;
+
+                if (_LayerCount > 1.5)
+                    layeredColor = lerp(layeredColor, _LayerColor1, smoothstep(_LayerTops0.x - edgeSoftness, _LayerTops0.x + edgeSoftness, h));
+                if (_LayerCount > 2.5)
+                    layeredColor = lerp(layeredColor, _LayerColor2, smoothstep(_LayerTops0.y - edgeSoftness, _LayerTops0.y + edgeSoftness, h));
+                if (_LayerCount > 3.5)
+                    layeredColor = lerp(layeredColor, _LayerColor3, smoothstep(_LayerTops0.z - edgeSoftness, _LayerTops0.z + edgeSoftness, h));
+                if (_LayerCount > 4.5)
+                    layeredColor = lerp(layeredColor, _LayerColor4, smoothstep(_LayerTops0.w - edgeSoftness, _LayerTops0.w + edgeSoftness, h));
+                if (_LayerCount > 5.5)
+                    layeredColor = lerp(layeredColor, _LayerColor5, smoothstep(_LayerTops1.x - edgeSoftness, _LayerTops1.x + edgeSoftness, h));
+                if (_LayerCount > 6.5)
+                    layeredColor = lerp(layeredColor, _LayerColor6, smoothstep(_LayerTops1.y - edgeSoftness, _LayerTops1.y + edgeSoftness, h));
+                if (_LayerCount > 7.5)
+                    layeredColor = lerp(layeredColor, _LayerColor7, smoothstep(_LayerTops1.z - edgeSoftness, _LayerTops1.z + edgeSoftness, h));
+
+                return lerp(layeredColor, _LiquidColor, saturate(_MixFactor));
             }
             ENDHLSL
         }

@@ -8,7 +8,7 @@ public static class DrinkDeliveryValidator
 {
     /// <summary>
     /// Checks that the container matches every requirement of the recipe.
-    /// All quantities are expressed in centiliters.
+    /// All quantities are expressed in milliliters.
     /// </summary>
     public static bool MatchesRecipe(
         DrinkContainer drink,
@@ -31,7 +31,7 @@ public static class DrinkDeliveryValidator
             return false;
         }
 
-        if (drink.TotalVolume > drink.MaxCapacityCl + 0.01f)
+        if (drink.TotalVolume > drink.MaxCapacityMl + 0.01f)
         {
             failureReason = "Container exceeds its capacity.";
             return false;
@@ -76,9 +76,9 @@ public static class DrinkDeliveryValidator
         {
             if (poured.Ingredient == IngredientType.None ||
                 poured.Ingredient == IngredientType.BeerFoam ||
-                poured.AmountCl <= 0f ||
-                float.IsNaN(poured.AmountCl) ||
-                float.IsInfinity(poured.AmountCl))
+                poured.AmountMl <= 0f ||
+                float.IsNaN(poured.AmountMl) ||
+                float.IsInfinity(poured.AmountMl))
             {
                 failureReason = "Invalid liquid ingredient.";
                 return false;
@@ -95,13 +95,13 @@ public static class DrinkDeliveryValidator
                 poured.Ingredient, out float existingAmount))
             {
                 actualIngredients[poured.Ingredient] =
-                    existingAmount + poured.AmountCl;
+                    existingAmount + poured.AmountMl;
             }
             else
             {
                 actualIngredients.Add(
                     poured.Ingredient,
-                    poured.AmountCl);
+                    poured.AmountMl);
             }
         }
 
@@ -150,8 +150,8 @@ public static class DrinkDeliveryValidator
             {
                 failureReason =
                     $"Incorrect {requirement.Key} amount: " +
-                    $"{actualAmount:0.##} cl, expected " +
-                    $"{expectedAmount:0.##} cl.";
+                    $"{actualAmount:0.##} ml, expected " +
+                    $"{expectedAmount:0.##} ml.";
                 return false;
             }
         }

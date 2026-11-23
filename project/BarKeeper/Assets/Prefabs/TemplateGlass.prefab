@@ -18,7 +18,7 @@ GameObject:
   - component: {fileID: 1388466899307511324}
   - component: {fileID: 2633771453489803038}
   m_Layer: 0
-  m_Name: BeerGlass
+  m_Name: TemplateGlass
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -251,20 +251,41 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BeerGlass
   ShowTopMostFoldoutHeaderGroup: 1
-  objectName: Objeto
+  objectName: Glass
   outline: {fileID: 1388466899307511324}
-  maxCapacityCl: 20
+  maxCapacityMl: 200
   glassType: 1
-  beerSize: 20
+  glassIdentity: 1
+  glassSizeMl: 200
   drinkRenderer: {fileID: 7894056937363297841}
-  useDebugOverride: 0
-  debugSetBeerCl: 0
-  debugSetFoamCl: 0
-  debugBeerCl: 0
-  debugMixerCl: 0
-  debugFoamCl: 0
+  ingredientColors:
+  - Ingredient: 1
+    Color: {r: 0.88, g: 0.94, b: 0.98, a: 0.45}
+  - Ingredient: 2
+    Color: {r: 0.95, g: 0.65, b: 0.12, a: 0.88}
+  - Ingredient: 3
+    Color: {r: 0.95, g: 0.55, b: 0.15, a: 0.88}
+  - Ingredient: 4
+    Color: {r: 0.16, g: 0.06, b: 0.02, a: 0.95}
+  - Ingredient: 5
+    Color: {r: 0.45, g: 0.88, b: 0.18, a: 0.82}
+  - Ingredient: 6
+    Color: {r: 0.78, g: 0.93, b: 1, a: 0.55}
+  - Ingredient: 7
+    Color: {r: 0.95, g: 0.92, b: 0.8, a: 0.65}
+  - Ingredient: 8
+    Color: {r: 0.84, g: 0.96, b: 0.92, a: 0.48}
+  - Ingredient: 9
+    Color: {r: 0.96, g: 0.84, b: 0.38, a: 0.78}
+  - Ingredient: 10
+    Color: {r: 0.98, g: 0.98, b: 0.92, a: 1}
+  identifiedCocktail: None
+  debugIsMixed: 0
+  debugTotalVolumeMl: 0
+  debugLiquidAmountMl: 0
+  debugFoamAmountMl: 0
   debugFoamRatio: 0
-  debugFoamLevel: 0
+  debugIngredients: []
 --- !u!1 &5893700750433876952
 GameObject:
   m_ObjectHideFlags: 0
