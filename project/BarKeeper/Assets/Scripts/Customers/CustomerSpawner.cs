@@ -19,6 +19,9 @@ public class CustomerSpawner : MonoBehaviour
     [Header("Spawn Points")]
     [SerializeField] private List<Transform> spawnPoints = new();
 
+    [Header("Counter Points")]
+    [SerializeField] private List<Transform> counterPoints = new();
+
     [Header("Spawn Timing")]
     [SerializeField, Min(0f)]
     private float minSpawnInterval = 5f;
@@ -27,9 +30,11 @@ public class CustomerSpawner : MonoBehaviour
     private float maxSpawnInterval = 10f;
 
     private NetworkManager networkManager;
-    private CustomerNPC[] occupiedPoints;
+    private CustomerNPC[] occupiedCounterPoints;
 
-    private readonly List<int> freePoints = new();
+    private readonly List<int> freeCounterPoints = new();
+
+    private readonly List<int> freeSpawnPoints = new();
 
     private Coroutine pendingSpawn;
     private int nextCustomerId = 1;
@@ -134,9 +139,9 @@ public class CustomerSpawner : MonoBehaviour
             return;
         }
 
-        if (occupiedPoints == null || occupiedPoints.Length != spawnPoints.Count)
+        if (occupiedCounterPoints == null || occupiedCounterPoints.Length != counterPoints.Count)
         {
-            occupiedPoints = new CustomerNPC[spawnPoints.Count];
+            occupiedCounterPoints = new CustomerNPC[counterPoints.Count];
         }
 
         ScheduleNextSpawn();
@@ -149,9 +154,9 @@ public class CustomerSpawner : MonoBehaviour
     {
         CancelPendingSpawn();
 
-        if (occupiedPoints != null)
+        if (occupiedCounterPoints != null)
         {
-            System.Array.Clear(occupiedPoints, 0, occupiedPoints.Length);
+            System.Array.Clear(occupiedCounterPoints, 0, occupiedCounterPoints.Length);
         }
 
         nextCustomerId = 1;
@@ -189,7 +194,10 @@ public class CustomerSpawner : MonoBehaviour
         if (orderManager == null || !orderManager.HasEligibleRecipes())
             return;
 
-        if (!HasFreeSpawnPoint())
+        if (!HasFreeCounterPoint())
+            return;
+
+        if (!HasValidSpawnPoint())
             return;
 
         pendingSpawn = StartCoroutine(SpawnAfterDelay());
@@ -209,27 +217,31 @@ public class CustomerSpawner : MonoBehaviour
         if (!CanSpawn)
             yield break;
 
-        int pointIndex = GetRandomFreeSpawnPoint();
+        int counterIndex = GetRandomFreeCounterPoint();
+        int spawnIndex = GetRandomSpawnPoint();
 
-        if (pointIndex == -1)
+        if (counterIndex == -1 || spawnIndex == -1)
+        {
             yield break;
+        }    
 
-        SpawnCustomer(pointIndex);
+        SpawnCustomer(spawnIndex, counterIndex);
 
         ScheduleNextSpawn();
+
     }
 
     /// <summary>
-    /// Checks whether at least one valid spawn point is unoccupied.
+    /// Checks whether at least one valid counter point is unoccupied.
     /// </summary>
-    private bool HasFreeSpawnPoint()
+    private bool HasFreeCounterPoint()
     {
-        if (occupiedPoints == null)
+        if (occupiedCounterPoints == null)
             return false;
 
-        for (int i = 0; i < spawnPoints.Count; i++)
+        for (int i = 0; i < counterPoints.Count; i++)
         {
-            if (spawnPoints[i] != null && occupiedPoints[i] == null)
+            if (counterPoints[i] != null && occupiedCounterPoints[i] == null)
             {
                 return true;
             }
@@ -239,50 +251,103 @@ public class CustomerSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns the index of a randomly selected free spawn point.
+    /// Returns the index of a randomly selected free counter point.
     /// Returns -1 if no valid points are available.
     /// </summary>
-    private int GetRandomFreeSpawnPoint()
+    private int GetRandomFreeCounterPoint()
     {
-        freePoints.Clear();
+        freeCounterPoints.Clear();
 
-        for (int i = 0; i < spawnPoints.Count; i++)
+        for (int i = 0; i < counterPoints.Count; i++)
         {
-            if (spawnPoints[i] != null && occupiedPoints[i] == null)
+            if (counterPoints[i] != null && occupiedCounterPoints[i] == null)
             {
-                freePoints.Add(i);
+                freeCounterPoints.Add(i);
             }
         }
 
-        if (freePoints.Count == 0)
+        if (freeCounterPoints.Count == 0)
             return -1;
 
-        int randomIndex = Random.Range(0, freePoints.Count);
+        int randomIndex = Random.Range(0, freeCounterPoints.Count);
 
-        return freePoints[randomIndex];
+        return freeCounterPoints[randomIndex];
+    }
+
+    /// <summary>
+    /// Returns the index of a randomly selected spawn point.
+    /// Returns -1 if no valid points are available.
+    /// </summary>
+    private int GetRandomSpawnPoint()
+    {
+        freeSpawnPoints.Clear();
+
+        for (int i = 0; i < spawnPoints.Count; i++)
+        {
+            if (spawnPoints[i] != null)
+            {
+                freeSpawnPoints.Add(i);
+            }
+        }
+
+        if (freeSpawnPoints.Count == 0)
+            return -1;
+
+        int randomIndex = Random.Range(0, freeSpawnPoints.Count);
+
+        return freeSpawnPoints[randomIndex];
+    }
+
+    /// <summary>
+    /// Checks if there is at least one valid spawn point.
+    /// </summary>
+    private bool HasValidSpawnPoint()
+    {
+        foreach (Transform point in spawnPoints)
+        {
+            if(point != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
     /// Creates a customer at the specified spawn point, assigns a unique ID, and spawns it across the network.
     /// </summary>
-    private void SpawnCustomer(int pointIndex)
+    private void SpawnCustomer(int spawnIndex, int counterIndex)
     {
         if (!CanSpawn)
             return;
+        
+        if(spawnIndex < 0 || spawnIndex >= spawnPoints.Count)
+            return;
+        
+        if(counterIndex < 0 || counterIndex >= counterPoints.Count)
+            return;
 
+        Transform spawnPoint = spawnPoints[spawnIndex];
+        Transform counterPoint = counterPoints[counterIndex];
+
+        if(spawnPoint == null || counterPoint == null)
+            return;
+        
+        if(occupiedCounterPoints[counterIndex] != null)
+            return;
+        
         // Create the order before spawning the customer.
         if (orderManager == null || !orderManager.TryCreateOrder(out DrinkOrder order))
             return;
-
-        Transform spawnPoint = spawnPoints[pointIndex];
 
         CustomerNPC customer = Instantiate(customerPrefab, spawnPoint.position, spawnPoint.rotation);
 
         int customerId = nextCustomerId++;
 
-        customer.Initialize(this, orderManager, customerId, pointIndex, order);
+        customer.Initialize(this, orderManager, customerId, counterIndex, spawnPoint, counterPoint, order);
 
-        occupiedPoints[pointIndex] = customer;
+        occupiedCounterPoints[counterIndex] = customer;
 
         customer.NetworkObject.Spawn(true);
 
@@ -293,20 +358,20 @@ public class CustomerSpawner : MonoBehaviour
     /// Releases the spawn point occupied by a despawned customer.
     /// Schedules a new spawn if the server is still active.
     /// </summary>
-    public void OnCustomerDespawned(CustomerNPC customer, int pointIndex)
+    public void OnCustomerDespawned(CustomerNPC customer, int counterIndex)
     {
-        if (occupiedPoints == null)
+        if (occupiedCounterPoints == null)
             return;
 
-        if (pointIndex < 0 || pointIndex >= occupiedPoints.Length)
+        if (counterIndex < 0 || counterIndex >= occupiedCounterPoints.Length)
             return;
 
-        if (occupiedPoints[pointIndex] != customer)
+        if (occupiedCounterPoints[counterIndex] != customer)
             return;
 
-        occupiedPoints[pointIndex] = null;
+        occupiedCounterPoints[counterIndex] = null;
 
-        Debug.Log($"[CustomerSpawner] Customer {customer.CustomerId} " + $"left spawn point {pointIndex}.", this);
+        Debug.Log($"[CustomerSpawner] Customer {customer.CustomerId} " + $"left counter point {counterIndex}.", this);
 
         ScheduleNextSpawn();
     }

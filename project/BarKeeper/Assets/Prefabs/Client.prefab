@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: -6736373778395568080}
   - component: {fileID: -7980016688273676763}
   - component: {fileID: -3678524964206394941}
+  - component: {fileID: -8516235137511912065}
   m_Layer: 0
   m_Name: Client
   m_TagString: Untagged
@@ -237,6 +238,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d82bb7e5296ad942bba8b1424cfd618, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimpleInteractable
+  ShowTopMostFoldoutHeaderGroup: 1
   objectName: Cliente
   outline: {fileID: -6736373778395568080}
 --- !u!114 &-3678524964206394941
@@ -252,3 +254,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomerNPC
   ShowTopMostFoldoutHeaderGroup: 1
+  movementSpeed: 4
+  stoppingDistance: 0.5
+  serviceTimeout: 10
+  orderWaitTimeout: 10
+  consumptionTime: 10
+  departureDelay: 3
+--- !u!195 &-8516235137511912065
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3780574435160243899}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 1
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
