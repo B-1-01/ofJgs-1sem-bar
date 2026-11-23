@@ -27,14 +27,6 @@ public class CustomerNPC : NetworkBehaviour
     private Transform spawnPoint;
     private Coroutine movementCoroutine;
 
-    [Header("Customer Timeouts")]
-    [SerializeField, Min(1f)]
-    private float serviceTimeout = 60f;
-    [SerializeField, Min(1f)]
-    private float orderWaitTimeout = 60f;
-
-    private Coroutine timeoutCoroutine;
-
     [Header("Customer Consumption")]
     [SerializeField, Min(0f)]
     private float consumptionTime = 10f;
@@ -239,62 +231,6 @@ public class CustomerNPC : NetworkBehaviour
         movementCoroutine = null;
 
         Debug.Log($"[CustomerNPC] Customer {customerId} arrived at the counter.", this);
-
-        if (orderStatus.Value == OrderStatus.Pending)
-        {
-            timeoutCoroutine = StartCoroutine(WaitForServiceTimeout());
-        }
-    }
-
-    /// <summary>
-    /// Customer waiting for service goes away.
-    /// </summary>
-    private IEnumerator WaitForServiceTimeout()
-    {
-        Debug.Log($"[CustomerNPC] Customer {customerId} is waiting to be served.", this);
-
-        yield return new WaitForSeconds(serviceTimeout);
-
-        timeoutCoroutine = null;
-
-        if(IsServer && orderStatus.Value == OrderStatus.Pending)
-        {
-            Debug.Log($"[CustomerNPC] Customer {customerId} left because nobody served them.", this);
-
-            orderStatus.Value = OrderStatus.Cancelled;
-
-            departureCoroutine = StartCoroutine(ReturnToSpawn());
-        }
-    }
-
-    /// <summary>
-    /// Customer waiting for order goes away.
-    /// </summary>
-    private IEnumerator WaitForOrderTimeout()
-    {
-        Debug.Log($"[CustomerNPC] Customer {customerId} is waiting for the order.", this);
-
-        yield return new WaitForSeconds(orderWaitTimeout);
-
-        timeoutCoroutine = null;
-
-        if(IsServer && orderStatus.Value == OrderStatus.InPreparation)
-        {
-            Debug.Log($"[CustomerNPC] Customer {customerId} left because the order took too long.", this);
-
-            orderStatus.Value = OrderStatus.Cancelled;
-
-            departureCoroutine = StartCoroutine(ReturnToSpawn());
-        }
-    }
-
-    private void StopTimeoutCoroutine()
-    {
-        if(timeoutCoroutine != null)
-        {
-            StopCoroutine(timeoutCoroutine);
-            timeoutCoroutine = null;
-        }
     }
 
     /// <summary>
@@ -303,8 +239,6 @@ public class CustomerNPC : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         orderStatus.OnValueChanged -= OnOrderStatusChanged;
-
-        StopTimeoutCoroutine();
 
         if (departureCoroutine != null)
         {
@@ -467,13 +401,7 @@ public class CustomerNPC : NetworkBehaviour
         // Synchronize the new status.
         orderStatus.Value = newStatus;
 
-        StopTimeoutCoroutine();
-
-        if(newStatus == OrderStatus.InPreparation)
-        {
-            timeoutCoroutine = StartCoroutine(WaitForOrderTimeout());
-        }
-        else if (newStatus == OrderStatus.Completed)
+        if (newStatus == OrderStatus.Completed)
         {
             departureCoroutine = StartCoroutine(ConsumeAndLeave());
         }
