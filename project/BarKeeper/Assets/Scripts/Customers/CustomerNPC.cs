@@ -1,17 +1,33 @@
 using System;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AI;
 using System.Collections;
 
 /// <summary>
 /// Represents a networked customer NPC, managing its unique identification, spawn point assignment, and server-authoritative despawn.
 /// </summary>
 [RequireComponent(typeof(NetworkObject))]
+[RequireComponent(typeof(NavMeshAgent))]
 public class CustomerNPC : NetworkBehaviour
 {
     private int customerId;
-    private int spawnPointIndex = -1;
+    private int counterPointIndex = -1;
     private CustomerSpawner spawner;
+
+    [Header("Customer Movement")]
+    [SerializeField, Min(0.1f)]
+    private float movementSpeed = 4f;
+    [SerializeField, Min(0.1f)]
+    private float stoppingDistance = 0.5f;
+    private NavMeshAgent agent;
+    private Transform targetCounterPoint;
+    private Transform spawnPoint;
+    private Coroutine movementCoroutine;
+
+    [Header("Customer Consumption")]
+    [SerializeField, Min(0f)]
+    private float consumptionTime = 10f;
 
     [Header("Customer Departure")]
     [SerializeField, Min(0.1f)]
@@ -91,7 +107,7 @@ public class CustomerNPC : NetworkBehaviour
     public event Action<CustomerNPC, OrderStatus, OrderStatus> OrderStatusChanged;
 
     public int CustomerId => customerId;
-    public int SpawnPointIndex => spawnPointIndex;
+    public int CounterPointIndex => counterPointIndex;
     public int OrderId => orderId;
     public string RecipeId => recipeId;
     public OrderStatus CurrentOrderStatus => orderStatus.Value;
@@ -141,7 +157,7 @@ public class CustomerNPC : NetworkBehaviour
     /// Initializes the customer with a unique ID and spawn point.
     /// Must be called by the server before spawning the NetworkObject.
     /// </summary>
-    public void Initialize(CustomerSpawner customerSpawner, DrinkOrderManager manager, int id, int pointIndex, DrinkOrder order)
+    public void Initialize(CustomerSpawner customerSpawner, DrinkOrderManager manager, int id, int counterIndex, Transform spawnPoint,Transform counterPoint, DrinkOrder order)
     {
         if (IsSpawned)
         {
@@ -149,15 +165,17 @@ public class CustomerNPC : NetworkBehaviour
             return;
         }
 
-        if (manager == null || order == null || order.Recipe == null)
+        if (manager == null || order == null || order.Recipe == null || counterPoint == null || spawnPoint == null)
         {
-            Debug.LogError("[CustomerNPC] Invalid order or order manager.", this);
+            Debug.LogError("[CustomerNPC] Invalid order or initialization data.", this);
             return;
         }
 
         spawner = customerSpawner;
         customerId = id;
-        spawnPointIndex = pointIndex;
+        counterPointIndex = counterIndex;
+        this.spawnPoint = spawnPoint;
+        targetCounterPoint = counterPoint;
         orderManager = manager;
         orderId = order.OrderId;
         recipeId = order.Recipe.RecipeId;
@@ -170,7 +188,7 @@ public class CustomerNPC : NetworkBehaviour
         ref BufferSerializer<T> serializer)
     {
         serializer.SerializeValue(ref customerId);
-        serializer.SerializeValue(ref spawnPointIndex);
+        serializer.SerializeValue(ref counterPointIndex);
         serializer.SerializeValue(ref orderId);
         serializer.SerializeValue(ref recipeId);
 
@@ -188,6 +206,19 @@ public class CustomerNPC : NetworkBehaviour
             orderManager = FindFirstObjectByType<DrinkOrderManager>();
         }
 
+        agent = GetComponent<NavMeshAgent>();
+
+        if (agent != null)
+        {
+            agent.speed = movementSpeed;
+            agent.stoppingDistance = stoppingDistance;
+
+            if (!IsServer)
+            {
+                agent.enabled = false;
+            }
+        }
+
         orderStatus.OnValueChanged += OnOrderStatusChanged;
 
         rejectedDeliveryCount.OnValueChanged += OnRejectedDeliveryCountChanged;
@@ -196,7 +227,7 @@ public class CustomerNPC : NetworkBehaviour
             $"[CustomerNPC] Spawned | " +
             $"CustomerId: {CustomerId} | " +
             $"NetworkObjectId: {NetworkObjectId} | " +
-            $"SpawnPoint: {SpawnPointIndex} | " +
+            $"CounterPoint: {CounterPointIndex} | " +
             $"Position: {transform.position}",
             this);
 
@@ -204,6 +235,11 @@ public class CustomerNPC : NetworkBehaviour
         {
             Debug.LogError("[CustomerNPC] Customer has no valid order.", this);
             return;
+        }
+
+        if (IsServer)
+        {
+            StartMovement();
         }
 
         PrintOrder();
@@ -323,7 +359,14 @@ public class CustomerNPC : NetworkBehaviour
             // Collection completed. Start a fresh delivery timer.
             StartPatienceTimer(OrderStatus.InPreparation);
         }
-        else if (newStatus == OrderStatus.Completed || newStatus == OrderStatus.Rejected || newStatus == OrderStatus.Cancelled)
+        else if (newStatus == OrderStatus.Completed)
+        {
+            StopPatienceTimer();
+
+            if (departureCoroutine == null)
+                departureCoroutine = StartCoroutine(ConsumeAndLeave());
+        }
+        else if(newStatus == OrderStatus.Rejected || newStatus == OrderStatus.Cancelled)
         {
             StopPatienceTimer();
 
@@ -343,6 +386,85 @@ public class CustomerNPC : NetworkBehaviour
     }
 
     /// <summary>
+    /// It will start the movement of the customer to the target point.
+    /// </summary>
+    private void StartMovement()
+    {
+        if(!IsServer || agent == null || !agent.enabled)
+            return;
+        
+        if(targetCounterPoint == null)
+        {
+            Debug.LogError($"[CustomerNPC] Customer {customerId} has no target CounterPoint.", this);
+            return;
+        }
+
+        if (movementCoroutine != null)
+        {
+            StopCoroutine(movementCoroutine);
+        }
+
+        movementCoroutine = StartCoroutine(MoveToCounterPoint());
+    }
+
+    /// <summary>
+    /// It will make the customer move to the target point.
+    /// </summary>
+    private IEnumerator MoveToCounterPoint()
+    {
+        yield return null;
+
+        if(!IsServer || agent == null || !agent.enabled)
+        {
+            movementCoroutine = null;
+            yield break;
+        }
+
+        if (!agent.isOnNavMesh)
+        {
+            Debug.LogError($"[CustomerNPC] Customer {customerId} is not on the NavMesh.", this);
+            movementCoroutine = null;
+            yield break;
+        }
+
+        agent.isStopped = false;
+
+        if (!agent.SetDestination(targetCounterPoint.position))
+        {
+            Debug.LogWarning($"[CustomerNPC] Could not set destination for customer.", this);
+            movementCoroutine = null;
+            yield break;
+        }
+
+        while (agent.pathPending)
+        {
+            yield return null;
+        }
+
+        if(agent.pathStatus != NavMeshPathStatus.PathComplete)
+        {
+            Debug.LogWarning($"[CustomerNPC] Customer {customerId} doesn't have a complete path to counter.", this);
+            movementCoroutine = null;
+            yield break;
+        }
+
+        while(agent.enabled && agent.isOnNavMesh && agent.remainingDistance > agent.stoppingDistance)
+        {
+            yield return null;
+        }
+
+        if(agent.enabled && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        movementCoroutine = null;
+
+        Debug.Log($"[CustomerNPC] Customer {customerId} arrived at the counter.", this);
+    }
+
+    /// <summary>
     /// Notifies the spawner when the customer is despawned, allowing the server to free the occupied spawn point.
     /// </summary>
     public override void OnNetworkDespawn()
@@ -357,6 +479,18 @@ public class CustomerNPC : NetworkBehaviour
             departureCoroutine = null;
         }
 
+        if(movementCoroutine != null)
+        {
+            StopCoroutine(movementCoroutine);
+            movementCoroutine = null;
+        }
+
+        if(agent != null && agent.enabled && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
         Debug.Log("[CustomerNPC] Customer " + customerId + " despawned.", this);
 
         if (IsServer && orderManager != null)
@@ -366,7 +500,7 @@ public class CustomerNPC : NetworkBehaviour
 
         if (IsServer && spawner != null)
         {
-            spawner.OnCustomerDespawned(this, spawnPointIndex);
+            spawner.OnCustomerDespawned(this, counterPointIndex);
         }
     }
 
@@ -535,10 +669,7 @@ public class CustomerNPC : NetworkBehaviour
     /// Validates a drink delivery on the server.
     /// Only the actual holder of the drink can attempt delivery.
     /// </summary>
-    private void TryDeliverDrink(
-        FPSPlayerController player,
-        ulong senderClientId,
-        ulong carriedItemObjectId)
+    private void TryDeliverDrink(FPSPlayerController player, ulong senderClientId, ulong carriedItemObjectId)
     {
         if (!IsServer ||
             orderManager == null ||
@@ -652,7 +783,7 @@ public class CustomerNPC : NetworkBehaviour
     }
 
     /// <summary>
-    /// Removes the customer after a configurable delay.
+    /// Customer returns to spawn after a configurable delay.
     /// </summary>
     private IEnumerator LeaveAfterDelay()
     {
@@ -660,7 +791,83 @@ public class CustomerNPC : NetworkBehaviour
 
         departureCoroutine = null;
 
+        yield return StartCoroutine(ReturnToSpawn());
+    }
+
+    /// <summary>
+    /// Customer returns to spawn after consuming the order with a configurable timeframe.
+    /// </summary>
+    private IEnumerator ConsumeAndLeave()
+    {
+        Debug.Log($"[CustomerNPC] Customer {customerId} is consuming the order for {consumptionTime} seconds.", this);
+
+        yield return new WaitForSeconds(consumptionTime);
+
+        departureCoroutine = null;
+
+        yield return StartCoroutine(ReturnToSpawn());
+    }
+
+    private IEnumerator ReturnToSpawn()
+    {
+        if(!IsServer || agent == null || !agent.enabled)
+        {
+            DespawnCustomer();
+            yield break;
+        }
+
+        if(spawnPoint == null)
+        {
+            Debug.LogWarning($"[CustomerNPC] Customer {customerId} has no spawnpoint to return to.", this);
+            DespawnCustomer();
+            yield break;
+        }
+
+        if (!agent.isOnNavMesh)
+        {
+            Debug.LogError($"[CustomerNPC] Customer {customerId} is not on the NavMesh.", this);
+            DespawnCustomer();
+            yield break;
+        }
+
+        Debug.Log($"[CustomerNPC] Customer {customerId} is returning to spawn.", this);
+
+        agent.isStopped = false;
+
+        if (!agent.SetDestination(spawnPoint.position))
+        {
+            Debug.LogWarning($"[CustomerNPC] Could not set return destination for customer.", this);
+            DespawnCustomer();
+            yield break;
+        }
+
+        while (agent.pathPending)
+        {
+            yield return null;
+        }
+
+        if(agent.pathStatus != NavMeshPathStatus.PathComplete)
+        {
+            Debug.LogWarning($"[CustomerNPC] Customer {customerId} doesn't have a complete path to spawn.", this);
+            DespawnCustomer();
+            yield break;
+        }
+
+        while(agent.enabled && agent.isOnNavMesh && agent.remainingDistance > agent.stoppingDistance)
+        {
+            yield return null;
+        }
+
+        if(agent.enabled && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        Debug.Log($"[CustomerNPC] Customer {customerId} arrived at spawn. Despawning.", this);
+
         DespawnCustomer();
+
     }
 
     /// <summary>
