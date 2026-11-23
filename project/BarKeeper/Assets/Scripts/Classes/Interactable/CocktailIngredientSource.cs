@@ -1,6 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
+[RequireComponent(typeof(Outline))]
 public class CocktailIngredientSource : MonoBehaviour
 {
     [Header("Ingredient Settings")]
@@ -21,9 +22,11 @@ public class CocktailIngredientSource : MonoBehaviour
     {
         if (outline == null)
             outline = GetComponent<Outline>();
+    }
 
-        if (outline != null)
-            outline.enabled = false;
+    private void Start()
+    {
+        if (outline != null) outline.enabled = false;
     }
 
     public void SetHighlighted(bool highlighted)
