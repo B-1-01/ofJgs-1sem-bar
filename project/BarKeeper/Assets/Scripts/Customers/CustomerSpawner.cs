@@ -237,33 +237,27 @@ public class CustomerSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// Sending away the remaining customers.
+    /// Checks if all customers are gone.
     /// </summary>
-    public void DismissRemainingCustomers()
+    public bool AreAllCustomersGone
     {
-        if (!CanSpawn)
+        get
         {
-            return;
-        }
-
-        SetSpawningEnabled(false);
-
-        if(occupiedCounterPoints == null)
-        {
-            return;
-        }
-
-        for(int i = 0; i < occupiedCounterPoints.Length; i++)
-        {
-            CustomerNPC customer = occupiedCounterPoints[i];
-
-            if(customer != null && customer.IsSpawned)
+            if(occupiedCounterPoints == null)
             {
-                customer.DespawnCustomer();
+                return true;
             }
-        }
 
-        Debug.Log($"[CustomerSpawner] Remaining customers dismissed.", this);
+            foreach(CustomerNPC customer in occupiedCounterPoints)
+            {
+                if(customer != null && customer.IsSpawned)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
     /// <summary>

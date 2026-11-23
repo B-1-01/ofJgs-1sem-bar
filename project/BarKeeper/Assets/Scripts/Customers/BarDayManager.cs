@@ -35,6 +35,9 @@ public class BarDayManager : NetworkBehaviour
     public int CurrentDay => currentDay.Value;
     public BarDayState CurrentState => currentState.Value;
 
+    /// <summary>
+    /// Checks how much time is remaining.
+    /// </summary>
     public float TimeRemaining
     {
         get
@@ -53,6 +56,9 @@ public class BarDayManager : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Makes sure tha values to start the day are correct.
+    /// </summary>
     public override void OnNetworkSpawn()
     {
         if (!IsServer)
@@ -70,6 +76,9 @@ public class BarDayManager : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Request to start the day for the Host and Client.
+    /// </summary>
     public void RequestStartDay()
     {
         if (!IsSpawned)
@@ -87,12 +96,18 @@ public class BarDayManager : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Request to start the day through a call to the server for the Client.
+    /// </summary>
     [Rpc(SendTo.Server)]
     private void RequestStartDayRpc()
     {
         StartDay();
     }
 
+    /// <summary>
+    /// Start the day.
+    /// </summary>
     private void StartDay()
     {
         if(!IsServer || currentState.Value != BarDayState.Preparation)
@@ -117,6 +132,9 @@ public class BarDayManager : NetworkBehaviour
         dayCoroutine = StartCoroutine(RunDay());
     }
 
+    /// <summary>
+    /// Process of the whole day with waiting for it to end and closing and ending day mechanisms.
+    /// </summary>
     private IEnumerator RunDay()
     {
         //Wait for day to end
@@ -150,31 +168,21 @@ public class BarDayManager : NetworkBehaviour
             yield break;
         }
 
-        EndDay();
-        dayCoroutine = null;
-    }
-
-    private void EndDay()
-    {
-        if (!IsServer)
-        {
-            return;
-        }
-
-        if(customerSpawner != null)
-        {
-            customerSpawner.SetSpawningEnabled(false);
-            customerSpawner.DismissRemainingCustomers();
-        }
-
         currentState.Value = BarDayState.DayEnded;
         phaseEndTime.Value = 0;
 
-        currentDay.Value++;
+        Debug.Log($"[BarDayManager] Day ended. Waiting for remaining customers...", this);
 
+        while(customerSpawner != null && !customerSpawner.AreAllCustomersGone)
+        {
+            yield return null;
+        }
+
+        currentDay.Value++;
         currentState.Value = BarDayState.Preparation;
 
         Debug.Log($"[BarDayManager] Preparing Day {currentDay.Value}.", this);
-    }
 
+        dayCoroutine = null;
+    }
 }
