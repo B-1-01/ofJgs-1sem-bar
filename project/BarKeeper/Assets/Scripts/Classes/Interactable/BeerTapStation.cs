@@ -64,6 +64,12 @@ public class BeerTapStation : Station
 
         currentHeightRatio = 0f;
 
+        if (currentGlass != null)
+        {
+            currentGlass.SetStationControlMode(true, disableNetTransformLocally: !IsServer);
+        }
+        SetGlassKinematicServerRpc(true);
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -72,17 +78,25 @@ public class BeerTapStation : Station
     {
         base.OnMinigameExited();
 
-        if (currentGlass != null && glassRestPoint != null)
+        if (currentGlass != null)
         {
-            currentGlass.transform.SetPositionAndRotation(glassRestPoint.position, glassRestPoint.rotation);
+            currentGlass.SetStationControlMode(false, disableNetTransformLocally: false);
+            if (glassRestPoint != null) currentGlass.transform.SetPositionAndRotation(glassRestPoint.position, glassRestPoint.rotation);
+            ResetGlassOnExitServerRpc();
         }
     }
+
 
     protected override void Update()
     {
         base.Update();
 
-        if (!isUsingStationLocally || currentGlass == null) return;
+        if (!isUsingStationLocally) return;
+
+        if (currentGlass == null && currentGlassRef.Value.TryGet(out NetworkObject netObj))
+            currentGlass = netObj.GetComponent<GlassBase>();
+
+        if (currentGlass == null) return;
 
         HandleGlassMovement();
         HandlePouring();
@@ -99,6 +113,11 @@ public class BeerTapStation : Station
         // Interpola a posição do copo entre o tabuleiro (0) e a torneira (1)
         Vector3 targetPos = Vector3.Lerp(glassRestPoint.position, tapNozzlePoint.position, currentHeightRatio);
         currentGlass.transform.position = targetPos;
+
+        if (!IsServer)
+        {
+            UpdateGlassHeightServerRpc(currentHeightRatio);
+        }
     }
 
     private void HandlePouring()
@@ -116,6 +135,44 @@ public class BeerTapStation : Station
             float liquidMl = totalPourThisFrame * (1f - turbulence);
 
             RequestPourRpc(liquidMl, foamMl);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SetGlassKinematicServerRpc(bool isKinematic)
+    {
+        if (currentGlass == null && currentGlassRef.Value.TryGet(out NetworkObject netObj))
+            currentGlass = netObj.GetComponent<GlassBase>();
+
+        if (currentGlass != null)
+            currentGlass.SetStationControlMode(isKinematic, disableNetTransformLocally: false);
+    }
+
+    [Rpc(SendTo.Server)]
+    private void UpdateGlassHeightServerRpc(float heightRatio)
+    {
+        if (currentGlass == null && currentGlassRef.Value.TryGet(out NetworkObject netObj))
+            currentGlass = netObj.GetComponent<GlassBase>();
+
+        if (currentGlass != null && glassRestPoint != null && tapNozzlePoint != null)
+        {
+            currentHeightRatio = Mathf.Clamp01(heightRatio);
+            currentGlass.transform.position = Vector3.Lerp(glassRestPoint.position, tapNozzlePoint.position, currentHeightRatio);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void ResetGlassOnExitServerRpc()
+    {
+        if (currentGlass == null && currentGlassRef.Value.TryGet(out NetworkObject netObj))
+            currentGlass = netObj.GetComponent<GlassBase>();
+
+        if (currentGlass != null)
+        {
+            if (glassRestPoint != null)
+                currentGlass.transform.SetPositionAndRotation(glassRestPoint.position, glassRestPoint.rotation);
+
+            currentGlass.SetStationControlMode(false, disableNetTransformLocally: false);
         }
     }
 

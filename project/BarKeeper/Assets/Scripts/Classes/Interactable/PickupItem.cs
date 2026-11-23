@@ -318,4 +318,22 @@ public class PickupItem : Interactable
 
         UpdatePhysicalState();
     }
+
+    public void SetStationControlMode(bool inStation, bool disableNetTransformLocally)
+    {
+        if (rb != null)
+        {
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            rb.isKinematic = inStation;
+        }
+
+        if (netTransform != null)
+        {
+            netTransform.enabled = !(inStation && disableNetTransformLocally);
+        }
+    }
 }
