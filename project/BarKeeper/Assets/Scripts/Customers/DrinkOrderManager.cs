@@ -25,6 +25,9 @@ public class DrinkOrderManager : MonoBehaviour
     // Notifies the customer spawner when available recipes change.
     public event Action EligibleRecipesChanged;
 
+    // Notifies server-side systems when an order changes status.
+    public event Action<int, OrderStatus, OrderStatus> OrderStatusChanged;
+
     private void OnEnable()
     {
         if (recipeManager == null)
@@ -279,6 +282,7 @@ public class DrinkOrderManager : MonoBehaviour
         if (oldStatus == OrderStatus.InPreparation)
         {
             if (newStatus == OrderStatus.Completed ||
+                newStatus == OrderStatus.Rejected ||
                 newStatus == OrderStatus.Cancelled)
             {
                 return true;
@@ -320,6 +324,9 @@ public class DrinkOrderManager : MonoBehaviour
         }
 
         order.SetStatus(newStatus);
+
+        // Notify interested systems of the accepted status change.
+        OrderStatusChanged?.Invoke(orderId, expectedStatus, newStatus);
 
         return true;
     }

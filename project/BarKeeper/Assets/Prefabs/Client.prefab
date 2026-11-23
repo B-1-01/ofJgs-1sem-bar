@@ -258,6 +258,8 @@ MonoBehaviour:
   stoppingDistance: 0.5
   consumptionTime: 11
   departureDelay: 3
+  pickupPatience: 20
+  deliveryPatience: 20
 --- !u!195 &-8516235137511912065
 NavMeshAgent:
   m_ObjectHideFlags: 0

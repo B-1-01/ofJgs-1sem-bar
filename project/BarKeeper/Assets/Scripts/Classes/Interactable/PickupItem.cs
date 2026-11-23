@@ -54,6 +54,16 @@ public class PickupItem : Interactable
         {
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
         }
+
+        // Clear the holder's reference when a carried item is despawned.
+        // This also handles drinks consumed by successful deliveries.
+        if (currentHolder != null)
+        {
+            if (currentHolder.CurrentlyHeldItem == this)
+                currentHolder.ClearHeldItem();
+
+            currentHolder = null;
+        }
     }
 
     private void LateUpdate()
