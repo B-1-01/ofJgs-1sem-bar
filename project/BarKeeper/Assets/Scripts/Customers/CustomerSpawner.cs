@@ -39,6 +39,8 @@ public class CustomerSpawner : MonoBehaviour
     private Coroutine pendingSpawn;
     private int nextCustomerId = 1;
 
+    private bool spawningEnabled = false;
+
     // Ensures that spawning is only performed by an active server.
     private bool CanSpawn =>
         networkManager != null &&
@@ -170,6 +172,12 @@ public class CustomerSpawner : MonoBehaviour
         if (!CanSpawn)
             return;
 
+        if (!spawningEnabled)
+        {
+            CancelPendingSpawn();
+            return;
+        }
+
         if (orderManager != null && orderManager.HasEligibleRecipes())
         {
             ScheduleNextSpawn();
@@ -185,7 +193,7 @@ public class CustomerSpawner : MonoBehaviour
     /// </summary>
     private void ScheduleNextSpawn()
     {
-        if (!CanSpawn || !isActiveAndEnabled)
+        if (!CanSpawn || !isActiveAndEnabled || !spawningEnabled)
             return;
 
         if (pendingSpawn != null)
@@ -204,6 +212,55 @@ public class CustomerSpawner : MonoBehaviour
     }
 
     /// <summary>
+    /// Turning ON and OFF spawning.
+    /// </summary>
+    public void SetSpawningEnabled(bool enabled)
+    {
+        if (!CanSpawn)
+        {
+            return;
+        }
+
+        spawningEnabled = enabled;
+
+        if (!spawningEnabled)
+        {
+            CancelPendingSpawn();
+
+            Debug.Log($"[CustomerSpawner] Spawning disabled.", this);
+            return;
+        }
+
+        Debug.Log($"[CustomerSpawner] Spawning enabled.", this);
+
+        ScheduleNextSpawn();
+    }
+
+    /// <summary>
+    /// Checks if all customers are gone.
+    /// </summary>
+    public bool AreAllCustomersGone
+    {
+        get
+        {
+            if(occupiedCounterPoints == null)
+            {
+                return true;
+            }
+
+            foreach(CustomerNPC customer in occupiedCounterPoints)
+            {
+                if(customer != null && customer.IsSpawned)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Waits for a random interval before spawning a customer at a randomly selected available point.
     /// </summary>
     private IEnumerator SpawnAfterDelay()
@@ -214,7 +271,7 @@ public class CustomerSpawner : MonoBehaviour
 
         pendingSpawn = null;
 
-        if (!CanSpawn)
+        if (!CanSpawn || !spawningEnabled)
             yield break;
 
         int counterIndex = GetRandomFreeCounterPoint();
@@ -319,7 +376,7 @@ public class CustomerSpawner : MonoBehaviour
     /// </summary>
     private void SpawnCustomer(int spawnIndex, int counterIndex)
     {
-        if (!CanSpawn)
+        if (!CanSpawn || !spawningEnabled)
             return;
         
         if(spawnIndex < 0 || spawnIndex >= spawnPoints.Count)
