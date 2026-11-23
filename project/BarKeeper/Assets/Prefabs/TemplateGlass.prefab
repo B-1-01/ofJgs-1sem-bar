@@ -132,7 +132,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 189117697
+  GlobalObjectIdHash: 3723252317
   InScenePlacedSourceGlobalObjectIdHash: 0
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
@@ -218,7 +218,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!114 &1388466899307511324
 MonoBehaviour:
@@ -255,6 +255,7 @@ MonoBehaviour:
   outline: {fileID: 1388466899307511324}
   maxCapacityMl: 200
   glassType: 1
+  emptySpawnPoint: {fileID: 0}
   glassIdentity: 1
   glassSizeMl: 200
   drinkRenderer: {fileID: 7894056937363297841}
