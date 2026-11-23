@@ -28,8 +28,7 @@ public enum IngredientType
 public enum IngredientUnit
 {
     Milliliters,
-    Units,
-    Centiliters
+    Units
 }
 
 /// <summary>

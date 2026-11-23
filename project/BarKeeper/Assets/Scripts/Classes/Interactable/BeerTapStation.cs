@@ -11,7 +11,7 @@ public class BeerTapStation : Station
 
     [Header("Minigame Tuning")]
     [SerializeField] private float mouseSensitivity = 0.15f;
-    [SerializeField] private float pourRateClPerSecond = 4f;
+    [SerializeField] private float pourRateMlPerSecond = 40f;
     [SerializeField] private float maxTurbulenceFactor = 0.75f;
 
     // Referência em rede ao copo atualmente na estação
@@ -21,7 +21,7 @@ public class BeerTapStation : Station
         NetworkVariableWritePermission.Server
     );
 
-    private BeerGlass currentGlass;
+    private GlassBase currentGlass;
     private float currentHeightRatio = 0f;
 
     public bool HasGlass => currentGlass != null;
@@ -39,7 +39,7 @@ public class BeerTapStation : Station
         Collider[] hits = Physics.OverlapSphere(glassRestPoint.position, detectionRadius);
         foreach (var hit in hits)
         {
-            BeerGlass glass = hit.GetComponentInParent<BeerGlass>();
+            GlassBase glass = hit.GetComponentInParent<GlassBase>();
             if (glass != null && !glass.IsHeld)
             {
                 currentGlass = glass;
@@ -60,7 +60,7 @@ public class BeerTapStation : Station
         base.OnMinigameStarted();
 
         // Garante que temos a referência local do copo
-        if (currentGlass == null && currentGlassRef.Value.TryGet(out NetworkObject netObj)) currentGlass = netObj.GetComponent<BeerGlass>();
+        if (currentGlass == null && currentGlassRef.Value.TryGet(out NetworkObject netObj)) currentGlass = netObj.GetComponent<GlassBase>();
 
         currentHeightRatio = 0f;
 
@@ -111,24 +111,24 @@ public class BeerTapStation : Station
             // Espuma por distancia
             float turbulence = Mathf.Lerp(maxTurbulenceFactor, 0.08f, currentHeightRatio);
 
-            float totalPourThisFrame = pourRateClPerSecond * Time.deltaTime;
-            float foamCl = totalPourThisFrame * turbulence;
-            float liquidCl = totalPourThisFrame * (1f - turbulence);
+            float totalPourThisFrame = pourRateMlPerSecond * Time.deltaTime;
+            float foamMl = totalPourThisFrame * turbulence;
+            float liquidMl = totalPourThisFrame * (1f - turbulence);
 
-            RequestPourRpc(liquidCl, foamCl);
+            RequestPourRpc(liquidMl, foamMl);
         }
     }
 
     [Rpc(SendTo.Server)]
-    private void RequestPourRpc(float liquidCl, float foamCl)
+    private void RequestPourRpc(float liquidMl, float foamMl)
     {
         if (currentGlass == null)
         {
             if (currentGlassRef.Value.TryGet(out NetworkObject netObj))
-                currentGlass = netObj.GetComponent<BeerGlass>();
+                currentGlass = netObj.GetComponent<GlassBase>();
         }
 
-        if (currentGlass != null) currentGlass.ServerAddIngredient(IngredientType.Beer, liquidCl, foamCl);
+        if (currentGlass != null) currentGlass.ServerAddIngredient(IngredientType.Beer, liquidMl, foamMl);
     }
 
     private void OnDrawGizmosSelected()

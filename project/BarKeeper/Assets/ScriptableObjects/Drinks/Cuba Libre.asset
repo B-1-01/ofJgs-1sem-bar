@@ -25,3 +25,5 @@ MonoBehaviour:
     quantity: 2
   station: 1
   method: 1
+  preferredGlass: 5
+  ingredientTolerancePercent: 10

@@ -16,9 +16,9 @@ MonoBehaviour:
   displayName: Fino
   ingredients:
   - ingredient: 2
-    quantity: 18
+    quantity: 180
   - ingredient: 10
-    quantity: 2
+    quantity: 20
   station: 0
   method: 2
   preferredGlass: 1

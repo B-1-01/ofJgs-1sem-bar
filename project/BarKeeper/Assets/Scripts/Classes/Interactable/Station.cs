@@ -9,7 +9,7 @@ public class Station : Interactable
     private const ulong NoUser = ulong.MaxValue;
 
     [Header("Station Perspective")]
-    [SerializeField] private Camera stationCamera;
+    [SerializeField] protected Camera stationCamera;
 
     [Header("In-Use Feedback")]
     [SerializeField] private GameObject inUseIndicator;
