@@ -10,6 +10,7 @@ public class Station : Interactable
 
     [Header("Station Perspective")]
     [SerializeField] protected Camera stationCamera;
+    [SerializeField] private GameObject crosshair;
 
     [Header("In-Use Feedback")]
     [SerializeField] private GameObject inUseIndicator;
@@ -148,6 +149,7 @@ public class Station : Interactable
         if (stationCamera != null) stationCamera.enabled = true;
 
         activeLocalPlayer.SetGameplayInputEnabled(false);
+        SetCrosshairActive(false);
 
         OnMinigameStarted();
     }
@@ -161,6 +163,8 @@ public class Station : Interactable
         isUsingStationLocally = false;
 
         if (stationCamera != null) stationCamera.enabled = false;
+
+        SetCrosshairActive(true);
 
         if (activeLocalPlayer != null)
         {
@@ -177,6 +181,12 @@ public class Station : Interactable
     private void UpdateVisualFeedback()
     {
         if (inUseIndicator != null) inUseIndicator.SetActive(IsInUse);
+    }
+
+    private void SetCrosshairActive(bool active)
+    {
+        if (crosshair != null)
+            crosshair.SetActive(active);
     }
 
     private void OnClientDisconnected(ulong clientId)

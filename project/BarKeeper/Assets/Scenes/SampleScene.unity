@@ -430,6 +430,81 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!1 &456195474
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 456195475}
+  - component: {fileID: 456195477}
+  - component: {fileID: 456195476}
+  m_Layer: 5
+  m_Name: Crosshair
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &456195475
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 456195474}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 1350796771}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &456195476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 456195474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.7058824}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &456195477
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 456195474}
+  m_CullTransparentMesh: 1
 --- !u!1 &635462616
 GameObject:
   m_ObjectHideFlags: 0
@@ -1098,7 +1173,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3739294769884106137, guid: cf4e122737ed6f14c95648aa728896c1, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3224921476
+      value: 2554001650
       objectReference: {fileID: 0}
     - target: {fileID: 3739294769884106137, guid: cf4e122737ed6f14c95648aa728896c1, type: 3}
       propertyPath: SceneMigrationSynchronization
@@ -1689,7 +1764,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3739294769884106137, guid: cf4e122737ed6f14c95648aa728896c1, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3671273867
+      value: 75889640
       objectReference: {fileID: 0}
     - target: {fileID: 3739294769884106137, guid: cf4e122737ed6f14c95648aa728896c1, type: 3}
       propertyPath: SceneMigrationSynchronization
@@ -2356,7 +2431,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3739294769884106137, guid: cf4e122737ed6f14c95648aa728896c1, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 1882121582
+      value: 1851080598
       objectReference: {fileID: 0}
     - target: {fileID: 3739294769884106137, guid: cf4e122737ed6f14c95648aa728896c1, type: 3}
       propertyPath: SceneMigrationSynchronization
@@ -2902,6 +2977,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 456195475}
   - {fileID: 1948137430}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3493,7 +3569,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3739294769884106137, guid: cf4e122737ed6f14c95648aa728896c1, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 2434183799
+      value: 2356036850
       objectReference: {fileID: 0}
     - target: {fileID: 3739294769884106137, guid: cf4e122737ed6f14c95648aa728896c1, type: 3}
       propertyPath: SceneMigrationSynchronization
@@ -3759,6 +3835,7 @@ MonoBehaviour:
   objectName: Objeto
   outline: {fileID: 1879690541}
   stationCamera: {fileID: 454333545}
+  crosshair: {fileID: 0}
   inUseIndicator: {fileID: 1204964345}
 --- !u!114 &1879690541
 MonoBehaviour:
@@ -4417,6 +4494,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BeerTap
       objectReference: {fileID: 0}
+    - target: {fileID: 4227345296667356825, guid: 2367c691fd225704491b214d2ac1c209, type: 3}
+      propertyPath: crosshair
+      value: 
+      objectReference: {fileID: 456195474}
     - target: {fileID: 8689743517345781191, guid: 2367c691fd225704491b214d2ac1c209, type: 3}
       propertyPath: m_InScenePlaced
       value: 1
@@ -4446,13 +4527,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: CocktailPrepArea
       objectReference: {fileID: 0}
+    - target: {fileID: 584977644462904346, guid: b19c7dcbc2acf7e45a26ff3d341be492, type: 3}
+      propertyPath: crosshair
+      value: 
+      objectReference: {fileID: 456195474}
     - target: {fileID: 4498997075131229043, guid: b19c7dcbc2acf7e45a26ff3d341be492, type: 3}
       propertyPath: m_InScenePlaced
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4498997075131229043, guid: b19c7dcbc2acf7e45a26ff3d341be492, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3756654086
+      value: 902372756
       objectReference: {fileID: 0}
     - target: {fileID: 4498997075131229043, guid: b19c7dcbc2acf7e45a26ff3d341be492, type: 3}
       propertyPath: SceneMigrationSynchronization
