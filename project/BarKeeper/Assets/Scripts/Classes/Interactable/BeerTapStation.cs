@@ -21,7 +21,7 @@ public class BeerTapStation : Station
         NetworkVariableWritePermission.Server
     );
 
-    private GlassBase currentGlass;
+    private DrinkContainer currentGlass;
     private float currentHeightRatio = 0f;
 
     public bool HasGlass => currentGlass != null;
@@ -105,6 +105,14 @@ public class BeerTapStation : Station
     {
         if (Keyboard.current == null) return;
 
+        
+        // Press [R] to empty the glass and start over
+        if (Keyboard.current.rKey.wasPressedThisFrame)
+        {
+            currentGlass.SetLocalMixPreview(0f);
+            RequestEmptyGlassRpc();
+        }
+
         // Segurar [ESPAÇO] ativa a torneira
         if (Keyboard.current.spaceKey.isPressed)
         {
@@ -129,6 +137,16 @@ public class BeerTapStation : Station
         }
 
         if (currentGlass != null) currentGlass.ServerAddIngredient(IngredientType.Beer, liquidMl, foamMl);
+    }
+
+    [Rpc(SendTo.Server)]
+    private void RequestEmptyGlassRpc()
+    {
+        if (currentGlass == null && currentGlassRef.Value.TryGet(out NetworkObject netObj))
+            currentGlass = netObj.GetComponent<DrinkContainer>();
+
+        if (currentGlass != null)
+            currentGlass.ServerEmpty();
     }
 
     private void OnDrawGizmosSelected()
