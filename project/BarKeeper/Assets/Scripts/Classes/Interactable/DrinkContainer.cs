@@ -174,9 +174,8 @@ public abstract class DrinkContainer : PickupItem
             {
                 ingredients.Add(new PouredIngredient(ingredient, amountMl));
                 // Adding a new distinct ingredient unmixes the drink so layers appear
-                if (ingredients.Count > 1)
-                    isMixed.Value = false;
             }
+            isMixed.Value = false;
         }
 
         // Remove excess foam when liquid or new foam exceeds the capacity.
