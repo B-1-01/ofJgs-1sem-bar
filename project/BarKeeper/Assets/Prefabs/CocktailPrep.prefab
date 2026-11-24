@@ -203,6 +203,7 @@ GameObject:
   - component: {fileID: 5399949319678292736}
   - component: {fileID: 7411632130979430986}
   - component: {fileID: 7162275656551593649}
+  - component: {fileID: 4149661707071412818}
   m_Layer: 0
   m_Name: Lime
   m_TagString: Untagged
@@ -320,6 +321,24 @@ MonoBehaviour:
   pourRatePerSecond: 5
   amountPerClick: 1
   outline: {fileID: 0}
+--- !u!114 &4149661707071412818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 208275088963987257}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Outline
+  outlineMode: 1
+  outlineColor: {r: 0.3443396, g: 1, b: 0.39234036, a: 1}
+  outlineWidth: 2
+  precomputeOutline: 0
+  bakeKeys: []
+  bakeValues: []
 --- !u!1 &1691368516435597182
 GameObject:
   m_ObjectHideFlags: 0
@@ -364,6 +383,7 @@ GameObject:
   - component: {fileID: 8762692066574979767}
   - component: {fileID: 2382202049509432766}
   - component: {fileID: 2877374382154537959}
+  - component: {fileID: 729425635816982781}
   m_Layer: 0
   m_Name: Rum
   m_TagString: Untagged
@@ -481,6 +501,24 @@ MonoBehaviour:
   pourRatePerSecond: 5
   amountPerClick: 1
   outline: {fileID: 0}
+--- !u!114 &729425635816982781
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2741878689120564473}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Outline
+  outlineMode: 1
+  outlineColor: {r: 1, g: 0.9251664, b: 0.4198113, a: 1}
+  outlineWidth: 2
+  precomputeOutline: 0
+  bakeKeys: []
+  bakeValues: []
 --- !u!1 &2744718844758141454
 GameObject:
   m_ObjectHideFlags: 0
@@ -494,6 +532,7 @@ GameObject:
   - component: {fileID: 8677647180765727391}
   - component: {fileID: 7885971476703415159}
   - component: {fileID: 4812876853571029931}
+  - component: {fileID: 68494526511842020}
   m_Layer: 0
   m_Name: Coke
   m_TagString: Untagged
@@ -611,6 +650,24 @@ MonoBehaviour:
   pourRatePerSecond: 5
   amountPerClick: 1
   outline: {fileID: 0}
+--- !u!114 &68494526511842020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2744718844758141454}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Outline
+  outlineMode: 1
+  outlineColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineWidth: 2
+  precomputeOutline: 0
+  bakeKeys: []
+  bakeValues: []
 --- !u!1 &4367967102999976298
 GameObject:
   m_ObjectHideFlags: 0
@@ -769,6 +826,7 @@ GameObject:
   - component: {fileID: 9009035621478333064}
   - component: {fileID: 5601839567562289027}
   - component: {fileID: 5159290240441359307}
+  - component: {fileID: 306641296845888406}
   m_Layer: 0
   m_Name: Ice
   m_TagString: Untagged
@@ -886,6 +944,24 @@ MonoBehaviour:
   pourRatePerSecond: 5
   amountPerClick: 1
   outline: {fileID: 0}
+--- !u!114 &306641296845888406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6449063562212054418}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Outline
+  outlineMode: 1
+  outlineColor: {r: 0.4669811, g: 0.9109323, b: 1, a: 1}
+  outlineWidth: 2
+  precomputeOutline: 0
+  bakeKeys: []
+  bakeValues: []
 --- !u!1 &8391460214809588477
 GameObject:
   m_ObjectHideFlags: 0

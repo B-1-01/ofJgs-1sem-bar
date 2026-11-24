@@ -251,6 +251,7 @@ public class FPSPlayerController : NetworkBehaviour
         {
             moveInput = Vector2.zero;
             pendingYaw = 0f;
+            ClearCurrentInteractable();
         }
 
         if (IsSpawned && IsOwner)

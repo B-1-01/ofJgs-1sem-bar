@@ -23,7 +23,7 @@ public class CocktailPrepStation : Station
     private CocktailIngredientSource hoveredSource;
     private float mixProgress;
 
-    private float pourTimer;
+    private float pourTimer = 1f;
 
     public Transform GlassRestPoint => glassRestPoint;
     public bool HasGlass => currentGlass != null;
@@ -131,7 +131,7 @@ public class CocktailPrepStation : Station
 
         if (hoveredSource != foundSource)
         {
-            pourTimer = 0f;
+            pourTimer = 1f;
             ClearHoveredSource();
             hoveredSource = foundSource;
             if (hoveredSource != null)
@@ -156,7 +156,7 @@ public class CocktailPrepStation : Station
             }
             else
             {
-                pourTimer = 0f;
+                pourTimer = 1f;
             }
         }
         else
